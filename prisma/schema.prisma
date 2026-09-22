@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Catalogue statique, toutes extensions confondues (seedé depuis prisma/data/*.json,
+// un fichier par extension). `set` référence Set.code (association logique,
+// pas de FK Prisma : le seed des Card ne doit pas dépendre de l'ordre de Set).
+model Card {
+  id           String   @id
+  set          String
+  numero       String
+  nom          String
+  rarete       String?
+  categorie    String?
+  illustrateur String?
+  hp           Int?
+  varNormal    Boolean  @default(false)
+  varReverse   Boolean  @default(false)
+  varHolo      Boolean  @default(false)
+  imageLocal   String? // chemin public/ pour le visuel basse définition téléchargé
+  imageUrl     String? // haute définition distante (tcgdex)
+  imageLow     String? // basse définition distante (tcgdex), filet de secours
+
+  entries CollectionEntry[]
+
+  @@index([set, numero])
+}
+
+// Métadonnées d'une extension (nom affichable, série/époque, logo) — seedé
+// depuis prisma/sets-meta.json. Sert au sélecteur d'extension et à nommer
+// les classeurs "master set".
+model Set {
+  code      String  @id
+  name      String
+  serieCode String?
+  serieName String?
+  logo      String?
+  symbol    String?
+  cardCount Int?
+}
+
+// Une "pile" de copies possédées d'une carte pour une variante donnée.
+// Plusieurs lignes par carte sont possibles (ex. import Pokecardex : 1 FR +
+// 1 US pour la même variante) — `quantite` porte le nombre d'exemplaires.
+// `langue`/`etat` valent "" (jamais NULL : une contrainte UNIQUE sur SQLite
+// ne bloque pas les doublons NULL) pour les entrées `manuel`, posées par les
+// cases à cocher du classeur ; `source="pokecardex"` pour les lignes issues
+// d'un import CSV, jamais touchées par le classeur (cf. toggleManuel).
+model CollectionEntry {
+  id        String    @id @default(cuid())
+  cardId    String
+  userId    String?   @default("local")
+  variante  String // "n" | "r" | "h"
+  quantite  Int       @default(1)
+  langue    String    @default("")
+  etat      String    @default("")
+  source    String    @default("manuel") // "manuel" | "pokecardex"
+  dateAjout DateTime?
+  createdAt DateTime  @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, variante, langue, etat])
+  @@index([userId])
+}
+
+// Image personnelle ajoutée à la bibliothèque de visuels.
+model Visual {
+  id        String   @id @default(cuid())
+  userId    String?  @default("local")
+  nom       String
+  path      String // chemin public (/uploads/xxx.ext)
+  mimeType  String
+  createdAt DateTime @default(now())
+}
+
+// Un classeur : la grille (format) et le contenu des cases. Plusieurs classeurs
+// peuvent coexister (userId nullable prévu pour un futur multi-comptes, cf.
+// CardOwnership/Visual). `type` distingue :
+//  - "master" : toutes les cartes d'une seule extension (`set` renseigné),
+//    rangées automatiquement à la création.
+//  - "custom" : classeur libre, cartes piochées dans n'importe quelle extension.
+// `casesJson` sérialise le même tableau que l'ancien `etat.cases` du POC
+// (null | {t:"c",id} | {t:"i",a,w,h,mode,x,y}) — la logique de placement,
+// de fusion de tuiles et de redimensionnement reste côté client, le serveur
+// ne fait que persister le résultat.
+model Binder {
+  id        String   @id @default(cuid())
+  userId    String?  @default("local")
+  nom       String? // requis pour "custom" ; dérivé de Set.name pour "master"
+  type      String // "custom" | "master"
+  set       String? // code d'extension, uniquement pour "master"
+  format    Int      @default(3)
+  casesJson String   @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
