@@ -6,14 +6,20 @@ import type { Carte, Quantites, QuantiteMap, SetMeta } from "@/lib/types";
 import CardImage from "./CardImage";
 import ImportPokecardexButton from "./ImportPokecardexButton";
 
-const LIBELLE: Record<"n" | "r" | "h", string> = { n: "Normale", r: "Reverse", h: "Holo" };
+const LIBELLE: Record<"n" | "r" | "h" | "p" | "m", string> = {
+  n: "Normale",
+  r: "Reverse",
+  h: "Holo",
+  p: "Reverse Poké Ball",
+  m: "Reverse Master Ball",
+};
 
 function possedeUne(q: Quantites | undefined): boolean {
-  return !!q && (q.n > 0 || q.r > 0 || q.h > 0);
+  return !!q && (q.n > 0 || q.r > 0 || q.h > 0 || q.p > 0 || q.m > 0);
 }
 
 function enDouble(q: Quantites | undefined): boolean {
-  return !!q && (q.n >= 2 || q.r >= 2 || q.h >= 2);
+  return !!q && (q.n >= 2 || q.r >= 2 || q.h >= 2 || q.p >= 2 || q.m >= 2);
 }
 
 export default function CollectionGrid({
@@ -116,7 +122,13 @@ export default function CollectionGrid({
         {!liste.length && <p className="vide">Aucune carte ne correspond. Assouplis la recherche ou les filtres.</p>}
         {liste.map((c) => {
           const qte = quantitesInitiales[c.id];
-          const dispo: Record<"n" | "r" | "h", boolean> = { n: c.varNormal, r: c.varReverse, h: c.varHolo };
+          const dispo: Record<"n" | "r" | "h" | "p" | "m", boolean> = {
+            n: c.varNormal,
+            r: c.varReverse,
+            h: c.varHolo,
+            p: c.varReversePokeball,
+            m: c.varReverseMasterball,
+          };
           return (
             <div key={c.id} className={`collection-carte${possedeUne(qte) ? "" : " manquante"}`}>
               <div className="collection-image">
@@ -126,10 +138,10 @@ export default function CollectionGrid({
                 {c.nom} <span>n° {c.numero}</span>
               </div>
               <div className="collection-quantites">
-                {(["n", "r", "h"] as const).map((k) =>
+                {(["n", "r", "h", "p", "m"] as const).map((k) =>
                   dispo[k] ? (
                     <span key={k} className={`quantite-badge${qte && qte[k] > 0 ? " on" : ""}`} title={LIBELLE[k]}>
-                      {LIBELLE[k][0]}×{qte ? qte[k] : 0}
+                      {k.toUpperCase()}×{qte ? qte[k] : 0}
                     </span>
                   ) : null
                 )}

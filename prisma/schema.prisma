@@ -22,6 +22,12 @@ model Card {
   varNormal    Boolean  @default(false)
   varReverse   Boolean  @default(false)
   varHolo      Boolean  @default(false)
+  // Reverse spécial à motif Poké Ball / Master Ball : remplace le reverse
+  // classique sur certains sets (151, Évolutions Prismatiques, Foudre Noire,
+  // Flamme Blanche...). Dérivé de varReverse au seed, pas de source TCGdex
+  // dédiée — cf. prisma/seed.ts, SETS_REVERSE_BALLS.
+  varReversePokeball   Boolean @default(false)
+  varReverseMasterball Boolean @default(false)
   imageLocal   String? // chemin public/ pour le visuel basse définition téléchargé
   imageUrl     String? // haute définition distante (tcgdex)
   imageLow     String? // basse définition distante (tcgdex), filet de secours

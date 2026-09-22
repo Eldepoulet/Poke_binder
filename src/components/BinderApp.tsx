@@ -177,11 +177,11 @@ export default function BinderApp({
     setCases((prev) => ajouterPages(dimensionner(prev, format), format));
   }
 
-  function alternerVariante(carteId: string, cle: "n" | "r" | "h", val: boolean) {
+  function alternerVariante(carteId: string, cle: "n" | "r" | "h" | "p" | "m", val: boolean) {
     setPossede((prev) => {
-      const p = { ...(prev[carteId] ?? { n: false, r: false, h: false }), [cle]: val };
+      const p = { ...(prev[carteId] ?? { n: false, r: false, h: false, p: false, m: false }), [cle]: val };
       const next = { ...prev };
-      if (!p.n && !p.r && !p.h) delete next[carteId];
+      if (!p.n && !p.r && !p.h && !p.p && !p.m) delete next[carteId];
       else next[carteId] = p;
       return next;
     });
@@ -462,7 +462,7 @@ export default function BinderApp({
         {dialogFicheCarte && carteEnFiche && (
           <FicheCarteDialog
             carte={carteEnFiche}
-            possede={possede[carteEnFiche.id] ?? { n: false, r: false, h: false }}
+            possede={possede[carteEnFiche.id] ?? { n: false, r: false, h: false, p: false, m: false }}
             onToggleVariante={(cle, val) => alternerVariante(carteEnFiche.id, cle, val)}
             onRemplacer={() => setDialog({ type: "picker", indice: dialogFicheCarte.indice })}
             onRetirer={() => {

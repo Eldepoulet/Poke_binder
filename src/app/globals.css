@@ -3,6 +3,7 @@
   --pocket:#1B2836; --edge:rgba(255,255,255,.09);
   --ink:#E9EFF7; --muted:#8FA3BA;
   --spark:#FFC94A; --reverse:#6FD8EC; --holo:#C89BF5;
+  --pokeball:#E4483C; --masterball:#9B59F6;
   --pad:clamp(12px,1.6vw,22px); --radius:9px;
 }
 *{box-sizing:border-box}
@@ -96,6 +97,8 @@ button{cursor:pointer;background:none;border:none}
 .pochette .variantes i.on-n{background:var(--spark)}
 .pochette .variantes i.on-r{background:var(--reverse)}
 .pochette .variantes i.on-h{background:var(--holo)}
+.pochette .variantes i.on-p{background:var(--pokeball)}
+.pochette .variantes i.on-m{background:var(--masterball)}
 .pochette.manquant .place{color:#5E4B4B;font-size:.68rem;text-align:center;padding:6px;line-height:1.3;white-space:pre-line}
 .pochette.visuel{background-repeat:no-repeat}
 

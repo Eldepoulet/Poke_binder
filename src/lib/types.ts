@@ -14,6 +14,8 @@ export type Carte = {
   varNormal: boolean;
   varReverse: boolean;
   varHolo: boolean;
+  varReversePokeball: boolean;
+  varReverseMasterball: boolean;
   imageLocal: string | null;
   imageUrl: string | null;
   imageLow: string | null;
@@ -27,13 +29,17 @@ export type Visuel = {
   createdAt: string;
 };
 
-export type Possede = { n: boolean; r: boolean; h: boolean };
+// n/r/h : normale/reverse/holo classiques. p/m : reverse à motif spécial
+// Poké Ball / Master Ball (151, Évolutions Prismatiques, Foudre Noire,
+// Flamme Blanche...) — n'existent que pour les cartes concernées
+// (Carte.varReversePokeball/varReverseMasterball).
+export type Possede = { n: boolean; r: boolean; h: boolean; p: boolean; m: boolean };
 export type PossedeMap = Record<string, Possede>;
 
 // Quantités possédées par variante (toutes sources confondues : cases
 // cochées dans le classeur + imports). Séparé de PossedeMap (booléen,
 // utilisé par le classeur existant) — sert à la vue Collection.
-export type Quantites = { n: number; r: number; h: number };
+export type Quantites = { n: number; r: number; h: number; p: number; m: number };
 export type QuantiteMap = Record<string, Quantites>;
 
 export type ImportResume = {

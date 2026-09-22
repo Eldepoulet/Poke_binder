@@ -20,7 +20,13 @@ function styleVisuel(e: CaseVisuel, visuel: Visuel | undefined, tuile: { w: numb
   return style;
 }
 
-const LIBELLE_VARIANTE: Record<"n" | "r" | "h", string> = { n: "Normale", r: "Reverse", h: "Holo" };
+const LIBELLE_VARIANTE: Record<"n" | "r" | "h" | "p" | "m", string> = {
+  n: "Normale",
+  r: "Reverse",
+  h: "Holo",
+  p: "Reverse Poké Ball",
+  m: "Reverse Master Ball",
+};
 
 export default function Pochette({
   indice,
@@ -77,8 +83,17 @@ export default function Pochette({
         )}
         <CardImage carte={carte} onEpuise={() => setManquant(true)} />
         <div className="variantes">
-          {(["n", "r", "h"] as const).map((k) => {
-            const dispo = k === "n" ? carte.varNormal : k === "r" ? carte.varReverse : carte.varHolo;
+          {(["n", "r", "h", "p", "m"] as const).map((k) => {
+            const dispo =
+              k === "n"
+                ? carte.varNormal
+                : k === "r"
+                ? carte.varReverse
+                : k === "h"
+                ? carte.varHolo
+                : k === "p"
+                ? carte.varReversePokeball
+                : carte.varReverseMasterball;
             if (!dispo) return null;
             const on = possede ? possede[k] : false;
             return (

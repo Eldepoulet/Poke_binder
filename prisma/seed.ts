@@ -23,6 +23,13 @@ type SourceCard = {
 
 const DATA_DIR = path.join(__dirname, "data");
 
+// Sets où le reverse classique est remplacé par deux motifs spéciaux (Poké
+// Ball / Master Ball), chacun tiré depuis le même emplacement "reverse" —
+// TCGdex ne distingue pas ces deux motifs dans les données sources, donc on
+// les dérive ici de var_reverse plutôt que de dupliquer les 3 fichiers JSON.
+// À compléter si un futur set reprend le même mécanisme (151, etc.).
+const SETS_REVERSE_BALLS = new Set(["sv08.5", "sv10.5b", "sv10.5w"]);
+
 function localPublicPath(set: string, imageLocale?: string): string | null {
   if (!imageLocale) return null;
   // "images/sv08/001.webp" (POC) -> "/cards/sv08/001.webp" (public/ de ce projet)
@@ -66,6 +73,7 @@ async function seedCards() {
     const cards: SourceCard[] = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
 
     for (const c of cards) {
+      const reverseBalls = SETS_REVERSE_BALLS.has(set) && !!c.var_reverse;
       await prisma.card.upsert({
         where: { id: c.id },
         create: {
@@ -80,6 +88,8 @@ async function seedCards() {
           varNormal: !!c.var_normal,
           varReverse: !!c.var_reverse,
           varHolo: !!c.var_holo,
+          varReversePokeball: reverseBalls,
+          varReverseMasterball: reverseBalls,
           imageLocal: localPublicPath(set, c.image_locale),
           imageUrl: c.image_url ?? null,
           imageLow: c.image_low ?? null,
@@ -94,6 +104,8 @@ async function seedCards() {
           varNormal: !!c.var_normal,
           varReverse: !!c.var_reverse,
           varHolo: !!c.var_holo,
+          varReversePokeball: reverseBalls,
+          varReverseMasterball: reverseBalls,
           imageLocal: localPublicPath(set, c.image_locale),
           imageUrl: c.image_url ?? null,
           imageLow: c.image_low ?? null,

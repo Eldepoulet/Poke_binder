@@ -16,6 +16,8 @@ function versCarte(c: {
   varNormal: boolean;
   varReverse: boolean;
   varHolo: boolean;
+  varReversePokeball: boolean;
+  varReverseMasterball: boolean;
   imageLocal: string | null;
   imageUrl: string | null;
   imageLow: string | null;

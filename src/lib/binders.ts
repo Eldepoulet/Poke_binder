@@ -16,6 +16,8 @@ function carteDepuisCard(c: {
   varNormal: boolean;
   varReverse: boolean;
   varHolo: boolean;
+  varReversePokeball: boolean;
+  varReverseMasterball: boolean;
   imageLocal: string | null;
   imageUrl: string | null;
   imageLow: string | null;
@@ -38,10 +40,12 @@ async function possedeGlobal(): Promise<PossedeMap> {
   const possede: PossedeMap = {};
   for (const r of rows) {
     if ((r._sum.quantite ?? 0) <= 0) continue;
-    const p = possede[r.cardId] ?? { n: false, r: false, h: false };
+    const p = possede[r.cardId] ?? { n: false, r: false, h: false, p: false, m: false };
     if (r.variante === "n") p.n = true;
     if (r.variante === "r") p.r = true;
     if (r.variante === "h") p.h = true;
+    if (r.variante === "p") p.p = true;
+    if (r.variante === "m") p.m = true;
     possede[r.cardId] = p;
   }
   return possede;

@@ -65,14 +65,18 @@ export function parseCsv(texte: string, delimiteur = ";"): string[][] {
   return lignes.filter((l) => !(l.length === 1 && l[0].trim() === ""));
 }
 
-type Bucket = "n" | "r" | "h";
+type Bucket = "n" | "r" | "h" | "p" | "m";
 
 // "Version" (Standard/Reverse/tampons...) + "Rarete" (peut valoir
-// "Holographique") déterminent la case n/r/h. Les tampons et variantes
-// spéciales (tout ce qui n'est ni "Standard" ni "Reverse") sont ignorés,
+// "Holographique") déterminent la case n/r/h/p/m. "Reverse (Pokéball)" et
+// "Reverse (Masterball)" sont les motifs de reverse spéciaux de certains
+// sets (151, Évolutions Prismatiques, Foudre Noire, Flamme Blanche...).
+// Les tampons et autres variantes spéciales (tout le reste) sont ignorés,
 // à la demande explicite de l'utilisateur.
 function bucketDeVersion(version: string, rarete: string): Bucket | null {
   const v = version.trim().toLowerCase();
+  if (v === "reverse (pokéball)" || v === "reverse (pokeball)") return "p";
+  if (v === "reverse (masterball)") return "m";
   if (v === "reverse") return "r";
   if (v === "standard") return rarete.toLowerCase().includes("holo") ? "h" : "n";
   return null;

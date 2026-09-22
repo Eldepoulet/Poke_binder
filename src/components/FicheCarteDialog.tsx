@@ -3,7 +3,13 @@
 import type { Carte, Possede } from "@/lib/types";
 import CardImage from "./CardImage";
 
-const LIBELLE: Record<"n" | "r" | "h", string> = { n: "Normale", r: "Reverse", h: "Holo" };
+const LIBELLE: Record<"n" | "r" | "h" | "p" | "m", string> = {
+  n: "Normale",
+  r: "Reverse",
+  h: "Holo",
+  p: "Reverse Poké Ball",
+  m: "Reverse Master Ball",
+};
 
 export default function FicheCarteDialog({
   carte,
@@ -15,15 +21,17 @@ export default function FicheCarteDialog({
 }: {
   carte: Carte;
   possede: Possede;
-  onToggleVariante: (cle: "n" | "r" | "h", val: boolean) => void;
+  onToggleVariante: (cle: "n" | "r" | "h" | "p" | "m", val: boolean) => void;
   onRemplacer: () => void;
   onRetirer: () => void;
   onFermer: () => void;
 }) {
-  const dispo: Record<"n" | "r" | "h", boolean> = {
+  const dispo: Record<"n" | "r" | "h" | "p" | "m", boolean> = {
     n: carte.varNormal,
     r: carte.varReverse,
     h: carte.varHolo,
+    p: carte.varReversePokeball,
+    m: carte.varReverseMasterball,
   };
 
   return (
@@ -41,7 +49,13 @@ export default function FicheCarteDialog({
         </p>
         <h4>Variantes possédées</h4>
         <div className="varlist">
-          {(["n", "r", "h"] as const).map((k) => (
+          {(["n", "r", "h", "p", "m"] as const)
+            // p/m n'existent que sur une poignée de sets (Évolutions
+            // Prismatiques, Foudre Noire, Flamme Blanche...) — inutile
+            // d'afficher deux lignes grisées "n'existe pas" sur les 22 000
+            // autres cartes du catalogue.
+            .filter((k) => dispo[k] || k === "n" || k === "r" || k === "h")
+            .map((k) => (
             <label key={k} className={dispo[k] ? "" : "absente"}>
               <input
                 type="checkbox"

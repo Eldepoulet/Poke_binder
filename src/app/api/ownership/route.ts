@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { toggleManuel } from "@/lib/ownership";
 
-function lireCorps(body: unknown): { cardId: string; variante: "n" | "r" | "h" } | null {
+function lireCorps(body: unknown): { cardId: string; variante: "n" | "r" | "h" | "p" | "m" } | null {
   if (!body || typeof body !== "object") return null;
   const { cardId, variante } = body as Record<string, unknown>;
   if (typeof cardId !== "string" || !cardId) return null;
-  if (variante !== "n" && variante !== "r" && variante !== "h") return null;
+  if (variante !== "n" && variante !== "r" && variante !== "h" && variante !== "p" && variante !== "m") return null;
   return { cardId, variante };
 }
 

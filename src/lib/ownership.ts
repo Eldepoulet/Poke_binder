@@ -8,7 +8,7 @@ const USER_ID = "local";
 // touche jamais aux entrées "pokecardex" (une carte importée reste visible
 // même si on décoche la case correspondante dans le classeur ; limite
 // connue, le classeur reste "à peaufiner plus tard").
-export async function toggleManuel(cardId: string, variante: "n" | "r" | "h", on: boolean): Promise<void> {
+export async function toggleManuel(cardId: string, variante: "n" | "r" | "h" | "p" | "m", on: boolean): Promise<void> {
   if (on) {
     await prisma.collectionEntry.upsert({
       where: { cardId_variante_langue_etat: { cardId, variante, langue: "", etat: "" } },
@@ -41,10 +41,12 @@ export async function quantitesPourSet(set: string): Promise<QuantiteMap> {
   const map: QuantiteMap = {};
   for (const r of rows) {
     const qty = r._sum.quantite ?? 0;
-    const q = map[r.cardId] ?? { n: 0, r: 0, h: 0 };
+    const q = map[r.cardId] ?? { n: 0, r: 0, h: 0, p: 0, m: 0 };
     if (r.variante === "n") q.n = qty;
     if (r.variante === "r") q.r = qty;
     if (r.variante === "h") q.h = qty;
+    if (r.variante === "p") q.p = qty;
+    if (r.variante === "m") q.m = qty;
     map[r.cardId] = q;
   }
   return map;
