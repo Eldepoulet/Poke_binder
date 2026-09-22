@@ -61,7 +61,7 @@ export function libererZone(cases: Case[], format: Format, indice: number, w: nu
 }
 
 export type Charge =
-  | { t: "c"; id: string }
+  | { t: "c"; id: string; variante?: "n" | "r" | "h" | "p" | "m" }
   | {
       t: "i";
       a: string;
@@ -76,10 +76,17 @@ export type Charge =
 export function placer(cases: Case[], format: Format, indice: number, charge: Charge): Case[] {
   if (charge.t === "c") {
     const next = [...cases];
-    const actuel = next.findIndex((e) => e && e.t === "c" && e.id === charge.id);
     const remplace = next[indice];
+    // La case cible détermine la variante quand la charge n'en précise pas
+    // (dépôt depuis le tiroir/picker, qui ne connaît pas la notion de
+    // variante) — préserve la structure d'un classeur "Normale + Reverse" :
+    // remplacer une pochette "Reverse" par une autre carte garde sa case
+    // "Reverse". Une charge qui précise déjà sa variante (déplacement d'une
+    // pochette existante) l'emporte.
+    const variante = charge.variante ?? (remplace && remplace.t === "c" ? remplace.variante : undefined);
+    const actuel = next.findIndex((e) => e && e.t === "c" && e.id === charge.id && e.variante === variante);
     if (actuel !== -1) next[actuel] = remplace && remplace.t === "c" ? remplace : null;
-    next[indice] = { t: "c", id: charge.id };
+    next[indice] = { t: "c", id: charge.id, variante };
     return next;
   }
 
@@ -99,13 +106,39 @@ export function placer(cases: Case[], format: Format, indice: number, charge: Ch
   return next;
 }
 
-export function ranger(cases: Case[], format: Format, cartes: Carte[]): Case[] {
+export type VarianteCarte = "n" | "r" | "h" | "p" | "m";
+
+// Une carte peut occuper plusieurs cases (une par copie possédable) en mode
+// "Normale + Reverse" : normale + reverse classique + reverse Poké Ball/
+// Master Ball pour les cartes qui les ont (Évolutions Prismatiques, Foudre
+// Noire, Flamme Blanche...). Le holo n'est utilisé qu'en repli, pour les
+// cartes qui n'ont NI normale NI reverse (ex/rares en impression unique) —
+// sinon la carte serait absente du classeur. Exportée : réutilisée telle
+// quelle par la vue Normale/Reverse de la page Collection (même découpage
+// carte → copies possédables, pour rester cohérent avec le classeur).
+export function slotsPourCarte(c: Carte): VarianteCarte[] {
+  const slots: VarianteCarte[] = [];
+  if (c.varNormal) slots.push("n");
+  if (c.varReverse) slots.push("r");
+  if (c.varReversePokeball) slots.push("p");
+  if (c.varReverseMasterball) slots.push("m");
+  if (!slots.length) slots.push("h");
+  return slots;
+}
+
+export function ranger(cases: Case[], format: Format, cartes: Carte[], avecVariantes = false): Case[] {
   const visuelsPlaces = cases
     .map((e, i) => (e && e.t === "i" ? { i, e } : null))
     .filter((v): v is { i: number; e: CaseVisuel } => v !== null);
 
   const ordre = [...cartes].sort((a, b) => (Number(a.numero) || 0) - (Number(b.numero) || 0));
-  const pages = Math.max(2, Math.ceil(Math.max(ordre.length, cases.length) / parPage(format)));
+  // Alterné carte par carte : normale/reverse/pokéball/masterball de la
+  // carte n avant la normale de la carte n+1 (garde l'ordre des numéros).
+  const emplacements: { id: string; variante?: VarianteCarte }[] = avecVariantes
+    ? ordre.flatMap((c) => slotsPourCarte(c).map((variante) => ({ id: c.id, variante })))
+    : ordre.map((c) => ({ id: c.id }));
+
+  const pages = Math.max(2, Math.ceil(Math.max(emplacements.length, cases.length) / parPage(format)));
   const next: Case[] = new Array(pages * parPage(format)).fill(null);
 
   visuelsPlaces.forEach(({ i, e }) => {
@@ -113,10 +146,10 @@ export function ranger(cases: Case[], format: Format, cartes: Carte[]): Case[] {
   });
 
   let k = 0;
-  for (const c of ordre) {
+  for (const emp of emplacements) {
     while (k < next.length && next[k]) k++;
     if (k >= next.length) break;
-    next[k] = { t: "c", id: c.id };
+    next[k] = { t: "c", id: emp.id, variante: emp.variante };
   }
   return next;
 }

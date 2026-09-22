@@ -37,7 +37,9 @@ function Page({
 
     const carte = entry && entry.t === "c" ? cardsById.get(entry.id) : undefined;
     const visuel = t ? visuelsById.get(t.e.a) : entry && entry.t === "i" ? visuelsById.get(entry.a) : undefined;
-    const poss: Possede | undefined = carte ? possede[carte.id] ?? { n: false, r: false, h: false } : undefined;
+    const poss: Possede | undefined = carte
+      ? possede[carte.id] ?? { n: false, r: false, h: false, p: false, m: false }
+      : undefined;
 
     cellules.push(
       <Pochette

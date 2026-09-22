@@ -101,6 +101,12 @@ model Binder {
   nom       String? // requis pour "custom" ; dérivé de Set.name pour "master"
   type      String // "custom" | "master"
   set       String? // code d'extension, uniquement pour "master"
+  // "normale" | "normale_reverse" — pour un master set, une case par carte
+  // ou une case par copie possédable (normale/reverse/pokéball/masterball,
+  // cf. lib/grille.ts). Persisté à part de casesJson pour que "Ranger auto"
+  // reflow dans le même mode même après un "Vider le classeur" (qui vide
+  // toutes les cases, donc leur tag de variante avec).
+  variantes String   @default("normale")
   format    Int      @default(3)
   casesJson String   @default("[]")
   createdAt DateTime @default(now())

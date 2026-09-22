@@ -93,6 +93,7 @@ export async function getBinder(id: string): Promise<(BinderState & { possede: P
     nom: nomAffichable(binder, setRow),
     type: binder.type as TypeClasseur,
     set: binder.set,
+    variantes: binder.variantes === "normale_reverse" ? "normale_reverse" : "normale",
     format,
     cases,
     possede,
@@ -100,7 +101,9 @@ export async function getBinder(id: string): Promise<(BinderState & { possede: P
 }
 
 export async function createBinder(
-  input: { type: "custom"; nom: string } | { type: "master"; set: string }
+  input:
+    | { type: "custom"; nom: string }
+    | { type: "master"; set: string; variantes?: "normale" | "normale_reverse" }
 ): Promise<string> {
   const format: Format = 3;
 
@@ -114,9 +117,10 @@ export async function createBinder(
 
   const cardsRaw = await prisma.card.findMany({ where: { set: input.set }, orderBy: { numero: "asc" } });
   const cartes: Carte[] = cardsRaw.map(carteDepuisCard);
-  const cases = ranger([], format, cartes);
+  const variantes = input.variantes === "normale_reverse" ? "normale_reverse" : "normale";
+  const cases = ranger([], format, cartes, variantes === "normale_reverse");
   const binder = await prisma.binder.create({
-    data: { type: "master", set: input.set, format, casesJson: JSON.stringify(cases) },
+    data: { type: "master", set: input.set, variantes, format, casesJson: JSON.stringify(cases) },
   });
   return binder.id;
 }

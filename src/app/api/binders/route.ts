@@ -23,6 +23,7 @@ export async function POST(request: Request) {
   if (typeof body.set !== "string" || !body.set) {
     return NextResponse.json({ error: "Extension manquante" }, { status: 400 });
   }
-  const id = await createBinder({ type: "master", set: body.set });
+  const variantes = body.variantes === "normale_reverse" ? "normale_reverse" : "normale";
+  const id = await createBinder({ type: "master", set: body.set, variantes });
   return NextResponse.json({ id }, { status: 201 });
 }

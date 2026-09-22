@@ -28,6 +28,15 @@ const LIBELLE_VARIANTE: Record<"n" | "r" | "h" | "p" | "m", string> = {
   m: "Reverse Master Ball",
 };
 
+// Version courte pour l'étiquette (espace réduit dans la pochette).
+const LIBELLE_COURT: Record<"n" | "r" | "h" | "p" | "m", string> = {
+  n: "Normale",
+  r: "Reverse",
+  h: "Holo",
+  p: "Poké Ball",
+  m: "Master Ball",
+};
+
 export default function Pochette({
   indice,
   format,
@@ -69,7 +78,9 @@ export default function Pochette({
 
   if (entry && entry.t === "c" && carte) {
     if (manquant) classes.push("manquant");
-    const titre = `${carte.nom} — n° ${carte.numero}${carte.rarete ? " · " + carte.rarete : ""}`;
+    const titre = `${carte.nom} — n° ${carte.numero}${carte.rarete ? " · " + carte.rarete : ""}${
+      entry.variante ? " · " + LIBELLE_COURT[entry.variante] : ""
+    }`;
     return (
       <button
         className={classes.join(" ")}
@@ -83,31 +94,42 @@ export default function Pochette({
         )}
         <CardImage carte={carte} onEpuise={() => setManquant(true)} />
         <div className="variantes">
-          {(["n", "r", "h", "p", "m"] as const).map((k) => {
-            const dispo =
-              k === "n"
-                ? carte.varNormal
-                : k === "r"
-                ? carte.varReverse
-                : k === "h"
-                ? carte.varHolo
-                : k === "p"
-                ? carte.varReversePokeball
-                : carte.varReverseMasterball;
-            if (!dispo) return null;
-            const on = possede ? possede[k] : false;
-            return (
-              <i
-                key={k}
-                className={on ? `on-${k}` : ""}
-                title={`${LIBELLE_VARIANTE[k]}${on ? " — possédée" : " — manquante"}`}
-              />
-            );
-          })}
+          {entry.variante
+            ? (() => {
+                const k = entry.variante!;
+                const on = possede ? possede[k] : false;
+                return (
+                  <i
+                    className={on ? `on-${k}` : ""}
+                    title={`${LIBELLE_VARIANTE[k]}${on ? " — possédée" : " — manquante"}`}
+                  />
+                );
+              })()
+            : (["n", "r", "h", "p", "m"] as const).map((k) => {
+                const dispo =
+                  k === "n"
+                    ? carte.varNormal
+                    : k === "r"
+                    ? carte.varReverse
+                    : k === "h"
+                    ? carte.varHolo
+                    : k === "p"
+                    ? carte.varReversePokeball
+                    : carte.varReverseMasterball;
+                if (!dispo) return null;
+                const on = possede ? possede[k] : false;
+                return (
+                  <i
+                    key={k}
+                    className={on ? `on-${k}` : ""}
+                    title={`${LIBELLE_VARIANTE[k]}${on ? " — possédée" : " — manquante"}`}
+                  />
+                );
+              })}
         </div>
         <div className="etiquette">
           <span>{carte.nom}</span>
-          <span>{carte.numero}</span>
+          <span>{carte.numero}{entry.variante ? ` · ${LIBELLE_COURT[entry.variante]}` : ""}</span>
         </div>
       </button>
     );

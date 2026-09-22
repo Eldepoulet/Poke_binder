@@ -49,7 +49,11 @@ export type ImportResume = {
   skippedSpecial: number;
 };
 
-export type CaseCarte = { t: "c"; id: string };
+// `variante` : présent uniquement pour un classeur master set créé en mode
+// "Normale + Reverse" — désigne quelle copie (n/r/h/p/m) occupe cette case
+// précise (cf. lib/grille.ts, ranger). Absent = comportement historique,
+// une case = une carte, toutes ses variantes possédées affichées ensemble.
+export type CaseCarte = { t: "c"; id: string; variante?: "n" | "r" | "h" | "p" | "m" };
 export type CaseVisuel = {
   t: "i";
   a: string; // id du visuel
@@ -80,6 +84,7 @@ export type BinderState = {
   nom: string;
   type: TypeClasseur;
   set: string | null;
+  variantes: "normale" | "normale_reverse";
   format: Format;
   cases: Case[];
 };

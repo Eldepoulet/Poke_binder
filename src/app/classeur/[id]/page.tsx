@@ -34,7 +34,7 @@ export default async function ClasseurPage({ params }: { params: { id: string } 
   return (
     <BinderApp
       key={binder.id}
-      binder={{ id: binder.id, nom: binder.nom, type: binder.type, set: binder.set }}
+      binder={{ id: binder.id, nom: binder.nom, type: binder.type, set: binder.set, variantes: binder.variantes }}
       cartesInitiales={cartes}
       visuelsInitiaux={visuels}
       formatInitial={binder.format}

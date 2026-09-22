@@ -31,6 +31,7 @@ type BinderInfo = {
   nom: string;
   type: TypeClasseur;
   set: string | null;
+  variantes: "normale" | "normale_reverse";
 };
 
 export default function BinderApp({
@@ -99,8 +100,10 @@ export default function BinderApp({
     binder.type === "master" ? cartesInitiales : [...cardsById.values()].filter((c) => idsPlaces.has(c.id));
   const compteur = cartesDuClasseur.filter((c) => {
     const p = possede[c.id];
-    return p && (p.n || p.r || p.h);
+    return p && (p.n || p.r || p.h || p.p || p.m);
   }).length;
+
+  const avecVariantes = binder.variantes === "normale_reverse";
   const total = cartesDuClasseur.length;
 
   const sousTitre =
@@ -159,7 +162,7 @@ export default function BinderApp({
   }
 
   function rangerAuto() {
-    setCases((prev) => ranger(dimensionner(prev, format), format, cartesDuClasseur));
+    setCases((prev) => ranger(dimensionner(prev, format), format, cartesDuClasseur, avecVariantes));
   }
 
   function viderClasseur() {
@@ -322,7 +325,7 @@ export default function BinderApp({
       const indice = indiceDepuisElement(poc);
       const contenu = cases[indice];
       if (!contenu) return;
-      porte.current = contenu.t === "c" ? { t: "c", id: contenu.id } : { ...contenu, depuis: indice };
+      porte.current = contenu.t === "c" ? { t: "c", id: contenu.id, variante: contenu.variante } : { ...contenu, depuis: indice };
     } else {
       return;
     }
