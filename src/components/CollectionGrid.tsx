@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Carte, Quantites, QuantiteMap, SetMeta } from "@/lib/types";
 import CardImage from "./CardImage";
@@ -33,11 +33,37 @@ export default function CollectionGrid({
 }) {
   const router = useRouter();
 
+  // Copie locale pour permettre le cocher/décocher immédiat depuis cette
+  // page (cf. alternerVariante) sans attendre un aller-retour serveur ;
+  // resynchronisée si le parent renvoie des props fraîches (après un
+  // import CSV, qui appelle déjà router.refresh()).
+  const [quantites, setQuantites] = useState<QuantiteMap>(quantitesInitiales);
+  useEffect(() => setQuantites(quantitesInitiales), [quantitesInitiales]);
+
   const [recherche, setRecherche] = useState("");
   const [rarete, setRarete] = useState("");
   const [categorie, setCategorie] = useState("");
   const [statut, setStatut] = useState<"toutes" | "possedees" | "manquantes">("toutes");
   const [doublesSeulement, setDoublesSeulement] = useState(false);
+
+  // Coche/décoche manuellement une variante depuis la page Collection —
+  // même mécanisme que la case à cocher de la fiche carte d'un classeur
+  // (CollectionEntry est globale, cf. lib/binders.ts). Bascule simple
+  // (comme le classeur) : pas un compteur — cliquer ajoute/retire une seule
+  // copie "manuel", quel que soit le total affiché (éventuellement cumulé
+  // avec un import Pokecardex).
+  function alternerVariante(carteId: string, cle: "n" | "r" | "h" | "p" | "m", on: boolean) {
+    setQuantites((prev) => {
+      const q = { ...(prev[carteId] ?? { n: 0, r: 0, h: 0, p: 0, m: 0 }) };
+      q[cle] = on ? Math.max(1, q[cle]) : 0;
+      return { ...prev, [carteId]: q };
+    });
+    fetch("/api/ownership", {
+      method: on ? "POST" : "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId: carteId, variante: cle }),
+    }).catch(() => {});
+  }
 
   const raretes = useMemo(
     () => [...new Set(cartes.map((c) => c.rarete))].filter((v): v is string => !!v).sort((a, b) => a.localeCompare(b, "fr")),
@@ -48,17 +74,17 @@ export default function CollectionGrid({
     [cartes]
   );
 
-  const possedeesCount = cartes.filter((c) => possedeUne(quantitesInitiales[c.id])).length;
+  const possedeesCount = cartes.filter((c) => possedeUne(quantites[c.id])).length;
 
   const q = recherche.trim().toLowerCase();
   const liste = cartes.filter((c) => {
     if (q && !(c.nom || "").toLowerCase().includes(q) && !c.numero.includes(q)) return false;
     if (rarete && c.rarete !== rarete) return false;
     if (categorie && c.categorie !== categorie) return false;
-    const poss = possedeUne(quantitesInitiales[c.id]);
+    const poss = possedeUne(quantites[c.id]);
     if (statut === "possedees" && !poss) return false;
     if (statut === "manquantes" && poss) return false;
-    if (doublesSeulement && !enDouble(quantitesInitiales[c.id])) return false;
+    if (doublesSeulement && !enDouble(quantites[c.id])) return false;
     return true;
   });
 
@@ -121,7 +147,7 @@ export default function CollectionGrid({
       <div className="collection-grille">
         {!liste.length && <p className="vide">Aucune carte ne correspond. Assouplis la recherche ou les filtres.</p>}
         {liste.map((c) => {
-          const qte = quantitesInitiales[c.id];
+          const qte = quantites[c.id];
           const dispo: Record<"n" | "r" | "h" | "p" | "m", boolean> = {
             n: c.varNormal,
             r: c.varReverse,
@@ -138,13 +164,21 @@ export default function CollectionGrid({
                 {c.nom} <span>n° {c.numero}</span>
               </div>
               <div className="collection-quantites">
-                {(["n", "r", "h", "p", "m"] as const).map((k) =>
-                  dispo[k] ? (
-                    <span key={k} className={`quantite-badge${qte && qte[k] > 0 ? " on" : ""}`} title={LIBELLE[k]}>
+                {(["n", "r", "h", "p", "m"] as const).map((k) => {
+                  if (!dispo[k]) return null;
+                  const on = !!qte && qte[k] > 0;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      className={`quantite-badge${on ? " on" : ""}`}
+                      title={`${LIBELLE[k]}${on ? " — cliquer pour retirer" : " — cliquer pour ajouter"}`}
+                      onClick={() => alternerVariante(c.id, k, !on)}
+                    >
                       {k.toUpperCase()}×{qte ? qte[k] : 0}
-                    </span>
-                  ) : null
-                )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );

@@ -201,7 +201,9 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
 .collection-nom{font-size:.8rem;line-height:1.3}
 .collection-nom span{color:var(--muted);font-size:.72rem}
 .collection-quantites{display:flex;gap:5px;flex-wrap:wrap}
-.quantite-badge{font-size:.68rem;padding:2px 6px;border-radius:99px;border:1px solid var(--edge);color:var(--muted)}
+.quantite-badge{font:inherit;font-size:.68rem;padding:2px 6px;border-radius:99px;border:1px solid var(--edge);
+  color:var(--muted);background:transparent;cursor:pointer}
+.quantite-badge:hover{border-color:var(--spark)}
 .quantite-badge.on{border-color:var(--spark);color:var(--spark);background:rgba(255,201,74,.1)}
 
 @media (max-width:900px){
