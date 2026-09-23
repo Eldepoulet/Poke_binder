@@ -2,7 +2,7 @@
 
 Portage du POC HTML/JS (`classeur-pokemon.html`) en application **Next.js 14
 (App Router) + React + TypeScript**, avec une vraie base de données
-(SQLite via Prisma) à la place du `localStorage` / IndexedDB du navigateur.
+(PostgreSQL via Prisma) à la place du `localStorage` / IndexedDB du navigateur.
 
 Le catalogue couvre les **202 extensions françaises** du jeu (~22 000 cartes,
 seedées depuis `prisma/data/*.json`). Plusieurs **classeurs** peuvent
@@ -21,15 +21,24 @@ automatique, export/import JSON.
 
 ## Démarrage
 
+La base est **PostgreSQL** (voir "Déploiement" plus bas) : en local, pointer
+`DATABASE_URL`/`DIRECT_URL` vers un Postgres de dev (branche Neon dédiée ou
+instance locale) en s'inspirant de `.env.example`.
+
 ```bash
 npm install
-npx prisma migrate dev   # crée prisma/dev.db et applique le schéma
-npm run db:seed          # (fait automatiquement après migrate dev) importe les 202 extensions
+npx prisma migrate dev   # applique le schéma
+npm run db:seed          # importe les 202 extensions (~22 000 cartes)
 npm run dev
 ```
 
 Ouvrir http://localhost:3000 — liste des classeurs, avec un bouton pour en
 créer un nouveau (personnalisé ou master set).
+
+Les images déposées par les utilisateurs vivent sur **Vercel Blob** : pour
+les tester en local, récupérer le jeton du projet avec `vercel env pull`
+(`BLOB_READ_WRITE_TOKEN`). Les visuels de cartes, eux, sont lus depuis
+`public/cards` tant que `CARDS_CDN_URL` est vide.
 
 ### Login Google (multi-utilisateurs)
 
@@ -48,7 +57,8 @@ partagée (voir "Notes de sécurité" ci-dessous).
      vérification Google nécessaire pour les scopes basiques email/profil
      utilisés ici, mais un écran "application non validée" peut s'afficher).
 3. Créer un identifiant **OAuth Client ID** (type **Web application**).
-4. Ajouter l'URI de redirection autorisée : `http://localhost:3000/api/auth/callback/google`.
+4. Ajouter les URI de redirection autorisées : `http://localhost:3000/api/auth/callback/google`
+   pour le dev, et `https://<domaine>/api/auth/callback/google` pour la production.
 5. Copier le Client ID / Client Secret générés dans `.env` :
 
    ```bash
@@ -69,6 +79,40 @@ Sans ces variables renseignées, personne ne peut se connecter.
   selon le paquet résolu par npx — renommer en `AUTH_SECRET` dans `.env`,
   c'est le nom que next-auth lit automatiquement.
 
+## Déploiement (Vercel)
+
+Le code est prêt pour Vercel ; il reste à provisionner les services et à
+renseigner les variables d'environnement.
+
+1. **Base Postgres** — provisionner Neon (marketplace Vercel, région UE), puis
+   renseigner `DATABASE_URL` (connexion poolée) et `DIRECT_URL` (connexion
+   directe, utilisée par les migrations). Créer la baseline :
+   `npx prisma migrate dev --name init_postgres`.
+2. **Visuels de cartes** — créer un bucket Cloudflare R2 public et y pousser
+   `public/cards` (18 330 fichiers, 382 Mo) :
+   `rclone copy public/cards r2:<bucket>/cards --transfers=32`, en posant
+   `Cache-Control: public, max-age=31536000, immutable`. Renseigner
+   `CARDS_CDN_URL` avec l'URL publique du bucket.
+3. **Catalogue** — lancer le seed **une fois**, depuis un poste de dev, pointé
+   sur la connexion directe Neon et avec `CARDS_CDN_URL` défini. Jamais
+   pendant le build Vercel.
+4. **Images utilisateurs** — créer un store Blob dans le projet Vercel ;
+   `BLOB_READ_WRITE_TOKEN` est alors injecté automatiquement.
+5. **Variables Vercel** — `DATABASE_URL`, `DIRECT_URL`, `AUTH_GOOGLE_ID`,
+   `AUTH_GOOGLE_SECRET`, `AUTH_SECRET` (en **régénérer un** pour la prod,
+   distinct du local), `CARDS_CDN_URL`. `AUTH_URL`/`AUTH_TRUST_HOST` sont
+   inutiles : Auth.js v5 détecte Vercel et fait confiance à l'hôte.
+6. **Google Console** — ajouter l'URI de redirection de production, compléter
+   la page de confidentialité (`src/app/privacy/page.tsx`, quelques champs
+   sont à renseigner), puis publier l'écran de consentement. Le domaine du
+   lien de confidentialité doit figurer dans les « domaines autorisés », ce
+   qui suppose un domaine vérifiable dans Search Console (un sous-domaine
+   `*.vercel.app` ne l'est pas).
+
+`.vercelignore` exclut du déploiement `public/cards`, `public/uploads` et
+`prisma/data` : ces fichiers restent dans le dépôt mais ne sont pas
+téléversés, ce qui garde les builds légers.
+
 Pour repartir d'une base vierge et re-seedée : `npx prisma migrate reset --force`.
 
 Le catalogue lui-même (`prisma/data/*.json`, `public/cards/*`,
@@ -80,7 +124,7 @@ cartes TCGdex) est mise à jour plus tard.
 
 ```
 prisma/
-  schema.prisma        Card, Set, Binder, CardOwnership, Visual (SQLite)
+  schema.prisma        Card, Set, Binder, CollectionEntry, Visual (PostgreSQL)
   seed.ts              boucle sur chaque prisma/data/*.json + sets-meta.json
   data/<code>.json      catalogue par extension (202 fichiers)
   sets-meta.json        noms/séries des extensions (généré une fois via l'API TCGdex)
@@ -97,8 +141,8 @@ src/
       binders/[id]/export/, .../import/  export/import JSON scopés à un classeur
       cards/              GET catalogue — exige ?set= (ou ?ids= pour résoudre un lot)
       sets/               GET liste des 202 extensions (nom, série, logo)
-      visuals/            GET/POST bibliothèque d'images (upload -> public/uploads)
-      visuals/[id]/       DELETE (fichier + entrée DB + nettoyage dans tous les classeurs)
+      visuals/            GET/POST bibliothèque d'images (upload -> Vercel Blob)
+      visuals/[id]/       DELETE (blob + entrée DB + nettoyage dans les classeurs du propriétaire)
   components/
     BinderApp.tsx        composant client racine : état, délégation clic/drag, sauvegarde
     BinderSwitcher.tsx    page d'accueil : liste + création de classeur
@@ -123,7 +167,7 @@ client**, en TypeScript pur dans `lib/grille.ts` — c'est un portage quasi
 direct des fonctions du POC (`dimensionner`, `analyse`, `placer`, `ranger`,
 `changerFormat`), réutilisé aussi côté serveur pour ranger automatiquement
 un nouveau classeur "master set". Le serveur ne fait que persister le
-résultat (`{format, cases, possede}`) dans SQLite : la grille (`cases`) est
+résultat (`{format, cases, possede}`) en base : la grille (`cases`) est
 stockée en JSON dans `Binder.casesJson`, comme elle l'était dans le
 `localStorage` du POC — la différence est qu'elle vit maintenant dans une
 vraie base, accessible via API plutôt qu'un `localStorage.setItem`.
@@ -154,10 +198,11 @@ sélecteur, il n'y a qu'une extension possible).
 - Le rendu haute définition (fiche détaillée) retente le CDN tcgdex, avec
   repli sur le visuel local puis sur le nom/numéro si tout échoue — même
   logique de cascade que le POC (`sourcesCarte`/`imgCarte`).
-- Les images personnelles (bibliothèque de visuels) sont de vrais fichiers
-  sur le serveur (`public/uploads/`), référencés en base — remplace le
+- Les images personnelles (bibliothèque de visuels) sont envoyées sur
+  **Vercel Blob**, `Visual.path` conservant leur URL publique — remplace le
   stockage en Blob IndexedDB du POC, qui ne fonctionnait que dans un seul
-  navigateur.
+  navigateur. Plafond de 4 Mo par image, imposé par la limite de 4,5 Mo sur
+  le corps des requêtes Vercel.
 
 ## Notes de sécurité / choix techniques
 
@@ -168,9 +213,17 @@ sélecteur, il n'y a qu'une extension possible).
   (RCE non authentifiée sur fichiers AVIF) — **cette API n'est jamais
   utilisée ici** : toutes les images passent par de simples balises
   `<img>`. Avant un déploiement public, prévoir une montée vers Next 15/16.
-- Base SQLite locale (`prisma/dev.db`), adaptée à un usage mono-poste. Pour
-  plusieurs appareils/utilisateurs, changer `datasource db` vers PostgreSQL
-  (le schéma Prisma est déjà écrit pour être portable) — cf. roadmap.
+- Base **PostgreSQL** (Neon en production). Le client Prisma est mis en cache
+  sur `globalThis` y compris en production : en serverless, chaque invocation
+  réévalue le module et ouvrirait sinon une connexion de plus.
+- Les fichiers déposés ne sont plus écrits sur le disque (impossible sur
+  Vercel) mais envoyés sur **Vercel Blob** ; `Visual.path` stocke l'URL
+  publique du blob. L'export d'un classeur ne contient donc plus les images
+  en base64 (format `version: 4`, qui référence les URLs) — l'import accepte
+  encore les anciens fichiers `version: 3`. Les URLs présentes dans un
+  fichier importé sont restreintes au domaine des blobs publics, pour qu'un
+  import piégé ne puisse pas faire émettre au serveur des requêtes
+  arbitraires (SSRF).
 - **Login Google multi-utilisateurs** (Auth.js v5 / `next-auth@beta`,
   `src/auth.ts`) : n'importe quel compte Google peut se connecter, via
   `src/middleware.ts` qui protège toutes les pages et routes API sauf
@@ -199,10 +252,11 @@ sélecteur, il n'y a qu'une extension possible).
 
 ## Suite (cf. feuille de route du POC)
 
-1. **Comptes** — `userId` déjà prévu dans `Binder`/`CardOwnership`/`Visual` ;
-   reste à ajouter l'authentification (NextAuth par ex.) et filtrer les
-   requêtes par utilisateur.
-2. **Partage** — page de classeur en lecture seule via un lien public.
+1. ~~**Comptes**~~ — fait : login Google (Auth.js v5), `userId` obligatoire et
+   scopé sur `Binder`/`CollectionEntry`/`Visual`.
+2. **Partage** — permettre à deux utilisateurs de consulter mutuellement
+   leurs classeurs (modèle de visibilité/invitations à définir), et page de
+   classeur en lecture seule via un lien public.
 3. ~~**Multi-extensions**~~ — fait : 202 extensions en base, classeurs
    "master set" (une extension) ou personnalisés (mélange, via
    `SelecteurExtension`).

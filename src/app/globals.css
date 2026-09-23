@@ -243,6 +243,17 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
   .fiche{grid-template-columns:1fr}
   .fiche .apercu{max-width:190px}
 }
+.legal{gap:8px}
+.legal section{margin-top:14px}
+.legal h2{font-size:1rem;font-weight:600;margin:0 0 8px}
+.legal p{margin:0 0 10px;line-height:1.65;font-size:.9rem;color:#C8D6E6}
+.legal ul{margin:0 0 10px;padding-left:20px;line-height:1.65;font-size:.9rem;color:#C8D6E6}
+.legal li{margin-bottom:6px}
+.legal strong{color:var(--ink)}
+.legal code{font-size:.84em;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.3);border:1px solid var(--edge)}
+.legal a{color:var(--spark)}
+.legal-maj{color:var(--muted);font-size:.8rem}
+
 .connexion{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:var(--pad)}
 .connexion-carte{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 28px;
   border:1px solid var(--edge);border-radius:var(--radius);background:rgba(12,18,26,.55);text-align:center;max-width:320px}

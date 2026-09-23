@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { getBinder } from "@/lib/binders";
 import { getUserId } from "@/lib/current-user";
@@ -19,17 +17,14 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     cases.filter((c): c is Extract<Case, { t: "i" }> => !!c && c.t === "i").map((c) => c.a)
   );
 
+  // On n'exporte plus les images en base64 : le fichier ne porte que leur URL
+  // publique, ce qui garde la réponse à quelques Ko même pour un classeur
+  // rempli de visuels (cf. ExportPayload, version 4).
   const images: ExportPayload["images"] = [];
   if (idsUtilises.size) {
     const visuels = await prisma.visual.findMany({ where: { id: { in: [...idsUtilises] }, userId } });
     for (const v of visuels) {
-      try {
-        const buffer = await readFile(path.join(process.cwd(), "public", v.path.replace(/^\//, "")));
-        images.push({ id: v.id, nom: v.nom, type: v.mimeType, data: buffer.toString("base64") });
-      } catch {
-        // fichier disparu du disque : on exporte sans cette image, la case
-        // restera simplement vide au ré-import.
-      }
+      images.push({ id: v.id, nom: v.nom, type: v.mimeType, url: v.path });
     }
   }
 
@@ -39,7 +34,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     cases,
     possede,
     images,
-    version: 3,
+    version: 4,
   };
 
   return NextResponse.json(payload);

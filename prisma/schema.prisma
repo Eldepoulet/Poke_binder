@@ -2,9 +2,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// `url` est la connexion poolée (pgbouncer) utilisée par l'application en
+// serverless ; `directUrl` est la connexion directe, réservée aux migrations
+// Prisma qui ne supportent pas le pooling.
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // Catalogue statique, toutes extensions confondues (seedé depuis prisma/data/*.json,

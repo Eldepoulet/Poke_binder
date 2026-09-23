@@ -100,11 +100,23 @@ export type SetMeta = {
   owned: number;
 };
 
+// v3 : `data` porte l'image encodée en base64, directement dans le fichier.
+// v4 : `url` pointe vers le blob public — l'export reste ainsi sous le plafond
+// de 4,5 Mo imposé aux réponses des fonctions Vercel. L'import accepte les
+// deux, pour que les fichiers exportés avant ce changement restent lisibles.
+export type ImageExportee = {
+  id: string;
+  nom: string;
+  type: string;
+  data?: string;
+  url?: string;
+};
+
 export type ExportPayload = {
   binderId: string;
   format: Format;
   cases: Case[];
   possede: PossedeMap;
-  images: { id: string; nom: string; type: string; data: string }[];
-  version: 3;
+  images: ImageExportee[];
+  version: 3 | 4;
 };

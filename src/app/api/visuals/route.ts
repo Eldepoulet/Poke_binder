@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { put } from "@vercel/blob";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/current-user";
@@ -8,9 +8,11 @@ import type { Visuel } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"]);
-const MAX_SIZE = 12 * 1024 * 1024; // 12 Mo par image
+// Le corps d'une requête est plafonné à 4,5 Mo sur Vercel : au-delà, l'upload
+// échouerait avant même d'atteindre ce code. Pour remonter cette limite il
+// faudrait passer par un upload client direct (@vercel/blob/client).
+const MAX_SIZE = 4 * 1024 * 1024; // 4 Mo par image
 
 function extensionPour(mime: string): string {
   return (
@@ -45,8 +47,6 @@ export async function POST(request: Request) {
   const fichiers = form.getAll("fichiers").filter((f): f is File => f instanceof File);
   if (!fichiers.length) return NextResponse.json({ error: "Aucun fichier" }, { status: 400 });
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const crees: Visuel[] = [];
   for (const fichier of fichiers) {
     if (!ALLOWED_TYPES.has(fichier.type)) continue;
@@ -54,15 +54,19 @@ export async function POST(request: Request) {
 
     const id = nanoid();
     const ext = extensionPour(fichier.type) || path.extname(fichier.name) || "";
-    const filename = `${id}${ext}`;
-    const buffer = Buffer.from(await fichier.arrayBuffer());
-    await writeFile(path.join(UPLOAD_DIR, filename), buffer);
+    // `id` (nanoid) garantit déjà l'unicité du chemin : pas de suffixe aléatoire,
+    // l'URL reste prévisible.
+    const blob = await put(`uploads/${id}${ext}`, fichier, {
+      access: "public",
+      contentType: fichier.type,
+      addRandomSuffix: false,
+    });
 
     const v = await prisma.visual.create({
       data: {
         id,
         nom: fichier.name || "image",
-        path: `/uploads/${filename}`,
+        path: blob.url,
         mimeType: fichier.type,
         userId,
       },

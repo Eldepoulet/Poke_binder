@@ -1,0 +1,10 @@
+# Visuels de cartes : servis depuis un CDN (CARDS_CDN_URL), inutile de
+# téléverser 382 Mo / 18 330 fichiers à chaque déploiement.
+public/cards
+
+# Images déposées par les utilisateurs : elles vivent sur Vercel Blob.
+public/uploads
+
+# Catalogue source du seed, exécuté manuellement depuis un poste de dev et
+# jamais pendant le build.
+prisma/data

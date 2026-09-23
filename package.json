@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:cards-cdn": "tsx prisma/scripts/set-cards-cdn.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
@@ -17,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "5.19.1",
+    "@vercel/blob": "^2.8.0",
     "nanoid": "5.0.7",
     "next": "14.2.35",
     "next-auth": "^5.0.0-beta.32",

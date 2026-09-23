@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { unlink } from "node:fs/promises";
-import path from "node:path";
+import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { retirerVisuelDesClasseurs } from "@/lib/binders";
 import { getUserId } from "@/lib/current-user";
@@ -18,9 +17,8 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
 
   await prisma.visual.delete({ where: { id } });
 
-  const filePath = path.join(process.cwd(), "public", visuel.path.replace(/^\//, ""));
-  await unlink(filePath).catch(() => {
-    /* fichier déjà absent : rien à faire */
+  await del(visuel.path).catch(() => {
+    /* blob déjà absent : rien à faire */
   });
 
   return NextResponse.json({ ok: true });
