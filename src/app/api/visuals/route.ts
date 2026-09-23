@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
+import { getUserId } from "@/lib/current-user";
 import type { Visuel } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,8 @@ function extensionPour(mime: string): string {
 }
 
 export async function GET() {
-  const visuels = await prisma.visual.findMany({ orderBy: { createdAt: "asc" } });
+  const userId = await getUserId();
+  const visuels = await prisma.visual.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
   const payload: Visuel[] = visuels.map((v) => ({
     id: v.id,
     nom: v.nom,
@@ -36,6 +38,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const userId = await getUserId();
   const form = await request.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
 
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
         nom: fichier.name || "image",
         path: `/uploads/${filename}`,
         mimeType: fichier.type,
+        userId,
       },
     });
     crees.push({ id: v.id, nom: v.nom, path: v.path, mimeType: v.mimeType, createdAt: v.createdAt.toISOString() });

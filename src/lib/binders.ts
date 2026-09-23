@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { ranger } from "@/lib/grille";
 import type { BinderState, Carte, Case, ClasseurResume, Format, PossedeMap, TypeClasseur } from "@/lib/types";
 
-const USER_ID = "local";
-
 function carteDepuisCard(c: {
   id: string;
   set: string;
@@ -31,10 +29,10 @@ function carteDepuisCard(c: {
 // pour l'UI du classeur — les quantités précises vivent dans la vue
 // Collection, cf. lib/ownership.ts), quel que soit l'ensemble de cartes
 // qu'il affiche.
-async function possedeGlobal(): Promise<PossedeMap> {
+async function possedeGlobal(userId: string): Promise<PossedeMap> {
   const rows = await prisma.collectionEntry.groupBy({
     by: ["cardId", "variante"],
-    where: { userId: USER_ID },
+    where: { userId },
     _sum: { quantite: true },
   });
   const possede: PossedeMap = {};
@@ -56,8 +54,8 @@ function nomAffichable(b: { nom: string | null; type: string; set: string | null
   return b.nom ?? "Classeur";
 }
 
-export async function listBinders(): Promise<ClasseurResume[]> {
-  const binders = await prisma.binder.findMany({ where: { userId: USER_ID }, orderBy: { updatedAt: "desc" } });
+export async function listBinders(userId: string): Promise<ClasseurResume[]> {
+  const binders = await prisma.binder.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } });
   const codes = [...new Set(binders.filter((b) => b.set).map((b) => b.set as string))];
   const sets = codes.length ? await prisma.set.findMany({ where: { code: { in: codes } } }) : [];
   const setByCode = new Map(sets.map((s) => [s.code, s]));
@@ -71,12 +69,12 @@ export async function listBinders(): Promise<ClasseurResume[]> {
   }));
 }
 
-export async function getBinder(id: string): Promise<(BinderState & { possede: PossedeMap }) | null> {
-  const binder = await prisma.binder.findUnique({ where: { id } });
+export async function getBinder(id: string, userId: string): Promise<(BinderState & { possede: PossedeMap }) | null> {
+  const binder = await prisma.binder.findFirst({ where: { id, userId } });
   if (!binder) return null;
 
   const setRow = binder.set ? await prisma.set.findUnique({ where: { code: binder.set } }) : null;
-  const possede = await possedeGlobal();
+  const possede = await possedeGlobal(userId);
 
   let cases: Case[] = [];
   try {
@@ -103,14 +101,15 @@ export async function getBinder(id: string): Promise<(BinderState & { possede: P
 export async function createBinder(
   input:
     | { type: "custom"; nom: string }
-    | { type: "master"; set: string; variantes?: "normale" | "normale_reverse" }
+    | { type: "master"; set: string; variantes?: "normale" | "normale_reverse" },
+  userId: string
 ): Promise<string> {
   const format: Format = 3;
 
   if (input.type === "custom") {
     const cases: Case[] = new Array(2 * format * format).fill(null);
     const binder = await prisma.binder.create({
-      data: { nom: input.nom, type: "custom", format, casesJson: JSON.stringify(cases) },
+      data: { nom: input.nom, type: "custom", format, casesJson: JSON.stringify(cases), userId },
     });
     return binder.id;
   }
@@ -120,7 +119,7 @@ export async function createBinder(
   const variantes = input.variantes === "normale_reverse" ? "normale_reverse" : "normale";
   const cases = ranger([], format, cartes, variantes === "normale_reverse");
   const binder = await prisma.binder.create({
-    data: { type: "master", set: input.set, variantes, format, casesJson: JSON.stringify(cases) },
+    data: { type: "master", set: input.set, variantes, format, casesJson: JSON.stringify(cases), userId },
   });
   return binder.id;
 }
@@ -129,22 +128,23 @@ export async function createBinder(
 // désormais gérée à part (cf. lib/ownership.ts, appelée immédiatement au
 // clic plutôt que via cette sauvegarde debounced) pour ne jamais écraser en
 // bloc des entrées importées avec langue/état/quantité.
-export async function saveBinder(id: string, next: { format: number; cases: Case[] }): Promise<void> {
+export async function saveBinder(id: string, next: { format: number; cases: Case[] }, userId: string): Promise<void> {
   const format = [2, 3, 4].includes(next.format) ? next.format : 3;
-  await prisma.binder.update({
-    where: { id },
+  await prisma.binder.updateMany({
+    where: { id, userId },
     data: { format, casesJson: JSON.stringify(next.cases) },
   });
 }
 
-export async function deleteBinder(id: string): Promise<void> {
-  await prisma.binder.delete({ where: { id } });
+export async function deleteBinder(id: string, userId: string): Promise<void> {
+  await prisma.binder.deleteMany({ where: { id, userId } });
 }
 
-// Retire les références à un visuel supprimé de tous les classeurs qui le
-// contiennent (le visuel est une ressource globale, partagée entre classeurs).
-export async function retirerVisuelDesClasseurs(visuelId: string): Promise<void> {
-  const binders = await prisma.binder.findMany({ select: { id: true, casesJson: true } });
+// Retire les références à un visuel supprimé de tous les classeurs de son
+// propriétaire (le visuel est une ressource partagée entre les classeurs
+// d'un même utilisateur, mais jamais entre utilisateurs différents).
+export async function retirerVisuelDesClasseurs(visuelId: string, userId: string): Promise<void> {
+  const binders = await prisma.binder.findMany({ where: { userId }, select: { id: true, casesJson: true } });
   for (const b of binders) {
     let cases: Case[];
     try {

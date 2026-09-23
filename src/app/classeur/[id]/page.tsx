@@ -1,16 +1,18 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getBinder } from "@/lib/binders";
+import { getUserId } from "@/lib/current-user";
 import BinderApp from "@/components/BinderApp";
 import type { Carte, Case, Visuel } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClasseurPage({ params }: { params: { id: string } }) {
-  const binder = await getBinder(params.id);
+  const userId = await getUserId();
+  const binder = await getBinder(params.id, userId);
   if (!binder) notFound();
 
-  const visualRows = await prisma.visual.findMany({ orderBy: { createdAt: "asc" } });
+  const visualRows = await prisma.visual.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
 
   const cardRows =
     binder.type === "master" && binder.set

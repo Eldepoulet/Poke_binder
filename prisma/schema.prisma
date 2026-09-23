@@ -60,7 +60,7 @@ model Set {
 model CollectionEntry {
   id        String    @id @default(cuid())
   cardId    String
-  userId    String?   @default("local")
+  userId    String
   variante  String // "n" | "r" | "h"
   quantite  Int       @default(1)
   langue    String    @default("")
@@ -71,23 +71,25 @@ model CollectionEntry {
 
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
-  @@unique([cardId, variante, langue, etat])
+  @@unique([userId, cardId, variante, langue, etat])
   @@index([userId])
 }
 
 // Image personnelle ajoutée à la bibliothèque de visuels.
 model Visual {
   id        String   @id @default(cuid())
-  userId    String?  @default("local")
+  userId    String
   nom       String
   path      String // chemin public (/uploads/xxx.ext)
   mimeType  String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Un classeur : la grille (format) et le contenu des cases. Plusieurs classeurs
-// peuvent coexister (userId nullable prévu pour un futur multi-comptes, cf.
-// CardOwnership/Visual). `type` distingue :
+// peuvent coexister, chacun appartenant à un utilisateur (userId = email du
+// compte Google connecté, cf. src/lib/current-user.ts). `type` distingue :
 //  - "master" : toutes les cartes d'une seule extension (`set` renseigné),
 //    rangées automatiquement à la création.
 //  - "custom" : classeur libre, cartes piochées dans n'importe quelle extension.
@@ -97,7 +99,7 @@ model Visual {
 // ne fait que persister le résultat.
 model Binder {
   id        String   @id @default(cuid())
-  userId    String?  @default("local")
+  userId    String
   nom       String? // requis pour "custom" ; dérivé de Set.name pour "master"
   type      String // "custom" | "master"
   set       String? // code d'extension, uniquement pour "master"

@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ImportResume } from "@/lib/types";
 
-const USER_ID = "local";
-
 // Parseur CSV `;`-délimité, guillemets façon RFC4180 (champ entre guillemets
 // si contient le délimiteur/retour à la ligne, `""` = guillemet littéral).
 // Écrit à la main plutôt qu'une dépendance : format source fixe et simple
@@ -110,7 +108,7 @@ type LigneAgregee = {
   nomOriginal: string;
 };
 
-export async function importPokecardexCsv(texte: string): Promise<ImportResume> {
+export async function importPokecardexCsv(texte: string, userId: string): Promise<ImportResume> {
   const [, ...corps] = parseCsv(texte); // ignore la ligne d'en-tête
 
   const sets = await prisma.set.findMany({ select: { code: true, name: true } });
@@ -240,13 +238,13 @@ export async function importPokecardexCsv(texte: string): Promise<ImportResume> 
       quantite: a.quantite,
       dateAjout: a.dateAjout,
       source: "pokecardex",
-      userId: USER_ID,
+      userId,
     });
   }
   const rows = [...rowsParCle.values()];
 
   await prisma.$transaction([
-    prisma.collectionEntry.deleteMany({ where: { userId: USER_ID, source: "pokecardex" } }),
+    prisma.collectionEntry.deleteMany({ where: { userId, source: "pokecardex" } }),
     prisma.collectionEntry.createMany({ data: rows }),
   ]);
 

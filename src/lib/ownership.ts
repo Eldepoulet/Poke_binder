@@ -1,41 +1,44 @@
 import { prisma } from "@/lib/prisma";
 import type { QuantiteMap } from "@/lib/types";
 
-const USER_ID = "local";
-
 // Coche/décoche une variante depuis le classeur : upsert (idempotent) ou
 // suppression d'une entrée "manuel" (langue="", état="") uniquement — ne
 // touche jamais aux entrées "pokecardex" (une carte importée reste visible
 // même si on décoche la case correspondante dans le classeur ; limite
 // connue, le classeur reste "à peaufiner plus tard").
-export async function toggleManuel(cardId: string, variante: "n" | "r" | "h" | "p" | "m", on: boolean): Promise<void> {
+export async function toggleManuel(
+  cardId: string,
+  variante: "n" | "r" | "h" | "p" | "m",
+  on: boolean,
+  userId: string
+): Promise<void> {
   if (on) {
     await prisma.collectionEntry.upsert({
-      where: { cardId_variante_langue_etat: { cardId, variante, langue: "", etat: "" } },
-      create: { cardId, variante, langue: "", etat: "", quantite: 1, source: "manuel", userId: USER_ID },
+      where: { userId_cardId_variante_langue_etat: { userId, cardId, variante, langue: "", etat: "" } },
+      create: { cardId, variante, langue: "", etat: "", quantite: 1, source: "manuel", userId },
       update: {},
     });
   } else {
     await prisma.collectionEntry.deleteMany({
-      where: { cardId, variante, langue: "", etat: "", source: "manuel", userId: USER_ID },
+      where: { cardId, variante, langue: "", etat: "", source: "manuel", userId },
     });
   }
 }
 
 // Supprime TOUTE la possession (import CSV + cases cochées à la main dans
 // les classeurs) — remet la collection à zéro pour cet utilisateur. Action
-// destructrice et globale : affecte immédiatement tous les classeurs
-// (master et custom), cf. binders.ts:possedeGlobal.
-export async function resetCollection(): Promise<void> {
-  await prisma.collectionEntry.deleteMany({ where: { userId: USER_ID } });
+// destructrice : affecte immédiatement tous les classeurs (master et
+// custom) de cet utilisateur, cf. binders.ts:possedeGlobal.
+export async function resetCollection(userId: string): Promise<void> {
+  await prisma.collectionEntry.deleteMany({ where: { userId } });
 }
 
 // Quantités possédées (toutes sources) pour chaque carte d'une extension —
 // alimente la vue Collection (badges "N×2 · R×1", filtre "en double").
-export async function quantitesPourSet(set: string): Promise<QuantiteMap> {
+export async function quantitesPourSet(set: string, userId: string): Promise<QuantiteMap> {
   const rows = await prisma.collectionEntry.groupBy({
     by: ["cardId", "variante"],
-    where: { userId: USER_ID, card: { set } },
+    where: { userId, card: { set } },
     _sum: { quantite: true },
   });
   const map: QuantiteMap = {};

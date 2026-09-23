@@ -3,12 +3,14 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { getBinder } from "@/lib/binders";
+import { getUserId } from "@/lib/current-user";
 import type { Case, ExportPayload } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const binder = await getBinder(params.id);
+  const userId = await getUserId();
+  const binder = await getBinder(params.id, userId);
   if (!binder) return NextResponse.json({ error: "Classeur introuvable" }, { status: 404 });
 
   const { format, cases, possede } = binder;
@@ -19,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
   const images: ExportPayload["images"] = [];
   if (idsUtilises.size) {
-    const visuels = await prisma.visual.findMany({ where: { id: { in: [...idsUtilises] } } });
+    const visuels = await prisma.visual.findMany({ where: { id: { in: [...idsUtilises] }, userId } });
     for (const v of visuels) {
       try {
         const buffer = await readFile(path.join(process.cwd(), "public", v.path.replace(/^\//, "")));

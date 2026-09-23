@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUserId } from "@/lib/current-user";
 import type { SetMeta } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const USER_ID = "local";
-
 export async function GET() {
+  const userId = await getUserId();
   // `Set.cardCount` (seedé depuis sets-meta.json) est en pratique souvent
   // désynchronisé du nombre réel de cartes chargées (secrètes/promos non
   // comptées à la source) — on lui préfère un comptage live sur Card, qui
@@ -15,7 +15,7 @@ export async function GET() {
     prisma.set.findMany({ orderBy: [{ serieName: "asc" }, { name: "asc" }] }),
     prisma.card.groupBy({ by: ["set"], _count: { _all: true } }),
     prisma.collectionEntry.findMany({
-      where: { userId: USER_ID },
+      where: { userId },
       distinct: ["cardId"],
       select: { card: { select: { set: true } } },
     }),

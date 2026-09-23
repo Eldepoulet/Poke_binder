@@ -243,4 +243,16 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
   .fiche{grid-template-columns:1fr}
   .fiche .apercu{max-width:190px}
 }
+.connexion{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:var(--pad)}
+.connexion-carte{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 28px;
+  border:1px solid var(--edge);border-radius:var(--radius);background:rgba(12,18,26,.55);text-align:center;max-width:320px}
+.connexion-carte h1{margin:0;font-size:1.2rem;font-weight:600}
+.connexion-carte p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+.bouton-google{padding:10px 18px;border-radius:7px;border:1px solid var(--edge);background:rgba(255,255,255,.04);font-size:.9rem;font-weight:500}
+.bouton-google:hover{background:rgba(255,255,255,.09)}
+.deconnexion{position:fixed;top:10px;right:10px;z-index:50;display:flex;align-items:center;gap:8px}
+.deconnexion-email{font-size:.74rem;color:var(--muted)}
+.deconnexion button{padding:6px 12px;border-radius:7px;border:1px solid var(--edge);background:rgba(12,18,26,.55);font-size:.78rem;color:var(--muted)}
+.deconnexion button:hover{background:rgba(255,255,255,.09);color:var(--ink)}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

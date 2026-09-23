@@ -4,6 +4,7 @@ import path from "node:path";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import { getBinder, saveBinder } from "@/lib/binders";
+import { getUserId } from "@/lib/current-user";
 import type { Case, ExportPayload } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,8 @@ export const dynamic = "force-dynamic";
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
-  const existing = await getBinder(params.id);
+  const userId = await getUserId();
+  const existing = await getBinder(params.id, userId);
   if (!existing) return NextResponse.json({ error: "Classeur introuvable" }, { status: 404 });
 
   const body = (await request.json().catch(() => null)) as ExportPayload | null;
@@ -35,7 +37,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const filename = `${id}${ext}`;
       await writeFile(path.join(UPLOAD_DIR, filename), buffer);
       await prisma.visual.create({
-        data: { id, nom: im.nom || "image", path: `/uploads/${filename}`, mimeType: im.type || "image/png" },
+        data: { id, nom: im.nom || "image", path: `/uploads/${filename}`, mimeType: im.type || "image/png", userId },
       });
       idMap.set(im.id, id);
     } catch {
@@ -54,7 +56,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   // La possession (CollectionEntry) est globale et n'est plus réécrite ici :
   // `body.possede` (présent pour compatibilité du format d'export) est ignoré.
-  await saveBinder(params.id, { format: body.format, cases });
+  await saveBinder(params.id, { format: body.format, cases }, userId);
 
   return NextResponse.json({ ok: true });
 }

@@ -31,6 +31,44 @@ npm run dev
 Ouvrir http://localhost:3000 — liste des classeurs, avec un bouton pour en
 créer un nouveau (personnalisé ou master set).
 
+### Login Google (multi-utilisateurs)
+
+L'application est protégée par un login Google : n'importe quel compte
+Google peut se connecter, et **chacun obtient sa propre collection**
+(classeurs, cartes cochées, visuels) — il n'y a plus de collection
+partagée (voir "Notes de sécurité" ci-dessous).
+
+1. Sur [console.cloud.google.com](https://console.cloud.google.com), créer/sélectionner un projet.
+2. Configurer l'écran de consentement OAuth (type **External**) :
+   - Pour un usage restreint à quelques personnes connues (famille/amis) :
+     laisser en mode **Testing** et ajouter chaque personne comme
+     utilisateur de test (jusqu'à 100).
+   - Pour ouvrir l'accès à n'importe quel compte Google sans les ajouter un
+     par un : passer le statut de publication en **In production** (pas de
+     vérification Google nécessaire pour les scopes basiques email/profil
+     utilisés ici, mais un écran "application non validée" peut s'afficher).
+3. Créer un identifiant **OAuth Client ID** (type **Web application**).
+4. Ajouter l'URI de redirection autorisée : `http://localhost:3000/api/auth/callback/google`.
+5. Copier le Client ID / Client Secret générés dans `.env` :
+
+   ```bash
+   AUTH_GOOGLE_ID="..."
+   AUTH_GOOGLE_SECRET="..."
+   AUTH_SECRET="..."           # généré via `npx auth secret`
+   ```
+
+Sans ces variables renseignées, personne ne peut se connecter.
+
+**Pièges connus :**
+- Si le port 3000 est déjà occupé, Next.js bascule sur 3001 (ou un autre) —
+  Google refuse alors la connexion avec `redirect_uri_mismatch`. Solution :
+  ajouter aussi `http://localhost:3001/api/auth/callback/google` (ou le bon
+  port) dans les URI de redirection autorisées du client OAuth, ou libérer
+  le port 3000 avant de lancer `npm run dev`.
+- `npx auth secret` peut générer une variable nommée `BETTER_AUTH_SECRET`
+  selon le paquet résolu par npx — renommer en `AUTH_SECRET` dans `.env`,
+  c'est le nom que next-auth lit automatiquement.
+
 Pour repartir d'une base vierge et re-seedée : `npx prisma migrate reset --force`.
 
 Le catalogue lui-même (`prisma/data/*.json`, `public/cards/*`,
@@ -89,9 +127,11 @@ résultat (`{format, cases, possede}`) dans SQLite : la grille (`cases`) est
 stockée en JSON dans `Binder.casesJson`, comme elle l'était dans le
 `localStorage` du POC — la différence est qu'elle vit maintenant dans une
 vraie base, accessible via API plutôt qu'un `localStorage.setItem`.
-Plusieurs `Binder` peuvent exister en parallèle ; les possessions
-(`CardOwnership`) et la bibliothèque de visuels (`Visual`) restent globales,
-indépendantes du classeur consulté.
+Plusieurs `Binder` peuvent exister en parallèle ; pour un même compte, les
+possessions (`CollectionEntry`) et la bibliothèque de visuels (`Visual`)
+restent globales entre ses propres classeurs, indépendamment de celui
+consulté — mais toujours scopées à ce compte (`userId`), jamais partagées
+entre utilisateurs différents.
 
 La sauvegarde est automatique (debounce de 300 ms après chaque
 modification), sans bouton — comme dans le POC.
@@ -131,11 +171,18 @@ sélecteur, il n'y a qu'une extension possible).
 - Base SQLite locale (`prisma/dev.db`), adaptée à un usage mono-poste. Pour
   plusieurs appareils/utilisateurs, changer `datasource db` vers PostgreSQL
   (le schéma Prisma est déjà écrit pour être portable) — cf. roadmap.
-- Pas de compte/authentification pour l'instant : une seule collection
-  partagée par quiconque ouvre l'application (comme le POC, mono-navigateur
-  devenu mono-serveur). `CardOwnership.userId` et `Visual.userId` existent
-  déjà dans le schéma pour introduire des comptes sans migration de
-  structure plus tard.
+- **Login Google multi-utilisateurs** (Auth.js v5 / `next-auth@beta`,
+  `src/auth.ts`) : n'importe quel compte Google peut se connecter, via
+  `src/middleware.ts` qui protège toutes les pages et routes API sauf
+  `/login`. `userId` (l'email du compte Google, cf. `src/lib/current-user.ts`)
+  est maintenant obligatoire et réellement utilisé pour scoper `Binder`,
+  `CollectionEntry` et `Visual` — chaque utilisateur ne voit et ne modifie
+  que ses propres données (vérifié via `findFirst`/`updateMany`/`deleteMany`
+  filtrés par `userId`, jamais par `id` seul). Session en JWT, pas d'adapter
+  Prisma ni de table utilisateur séparée : l'email fait office d'identifiant
+  stable. Les anciennes données de l'ère mono-collection (`userId="local"`)
+  restent en base mais sont désormais orphelines — aucun compte réel ne
+  peut plus y accéder.
 
 ## Limites connues de cette conversion
 
