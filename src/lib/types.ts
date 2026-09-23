@@ -97,6 +97,7 @@ export type SetMeta = {
   logo: string | null;
   symbol: string | null;
   cardCount: number | null;
+  owned: number;
 };
 
 export type ExportPayload = {

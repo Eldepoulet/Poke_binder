@@ -53,7 +53,7 @@ export default function CollectionPage() {
           </button>
         </div>
       )}
-      <SelecteurExtension onChoisir={(code) => router.push(`/collection/${code}`)} />
+      <SelecteurExtension variant="grille" onChoisir={(code) => router.push(`/collection/${code}`)} />
     </div>
   );
 }

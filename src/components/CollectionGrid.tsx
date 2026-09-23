@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Carte, Quantites, QuantiteMap, SetMeta } from "@/lib/types";
+import type { Carte, Quantites, QuantiteMap } from "@/lib/types";
 import { slotsPourCarte, type VarianteCarte } from "@/lib/grille";
 import CardImage from "./CardImage";
 import ImportPokecardexButton from "./ImportPokecardexButton";
@@ -37,7 +37,7 @@ export default function CollectionGrid({
   cartes,
   quantitesInitiales,
 }: {
-  set: SetMeta;
+  set: { name: string };
   cartes: Carte[];
   quantitesInitiales: QuantiteMap;
 }) {
