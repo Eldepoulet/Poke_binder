@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getBinder } from "@/lib/binders";
 import { getUserId } from "@/lib/current-user";
+import { trierParNumero } from "@/lib/grille";
 import BinderApp from "@/components/BinderApp";
 import type { Carte, Case, Visuel } from "@/lib/types";
 
@@ -16,7 +17,7 @@ export default async function ClasseurPage({ params }: { params: { id: string } 
 
   const cardRows =
     binder.type === "master" && binder.set
-      ? await prisma.card.findMany({ where: { set: binder.set }, orderBy: { numero: "asc" } })
+      ? trierParNumero(await prisma.card.findMany({ where: { set: binder.set } }))
       : await (async () => {
           const ids = binder.cases
             .filter((c): c is Extract<Case, { t: "c" }> => !!c && c.t === "c")

@@ -6,6 +6,13 @@ import type { Carte, Case, CaseVisuel, Format } from "./types";
 
 export const parPage = (format: Format) => format * format;
 
+// Tri "naturel" des numéros de carte : 9 avant 10 (les anciens sets ne sont
+// pas complétés de zéros, un tri texte en base donnerait 1, 10, 100, 11...),
+// et les numéros préfixés (TG01, GG01, SV001) après les numéros purs.
+export function trierParNumero<T extends { numero: string }>(cartes: T[]): T[] {
+  return [...cartes].sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
+}
+
 export function nbPages(cases: Case[], format: Format): number {
   return Math.max(2, Math.ceil(cases.length / parPage(format)));
 }
@@ -131,9 +138,7 @@ export function ranger(cases: Case[], format: Format, cartes: Carte[], avecVaria
     .map((e, i) => (e && e.t === "i" ? { i, e } : null))
     .filter((v): v is { i: number; e: CaseVisuel } => v !== null);
 
-  // Tri "naturel" : 9 avant 10, et les numéros préfixés (TG01, GG01 des
-  // galeries fusionnées dans leur set parent) après les numéros purs.
-  const ordre = [...cartes].sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
+  const ordre = trierParNumero(cartes);
   // Alterné carte par carte : normale/reverse/pokéball/masterball de la
   // carte n avant la normale de la carte n+1 (garde l'ordre des numéros).
   const emplacements: { id: string; variante?: VarianteCarte }[] = avecVariantes

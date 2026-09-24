@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ranger } from "@/lib/grille";
+import { ranger, trierParNumero } from "@/lib/grille";
 import type { BinderState, Carte, Case, ClasseurResume, Format, PossedeMap, TypeClasseur } from "@/lib/types";
 
 function carteDepuisCard(c: {
@@ -114,8 +114,8 @@ export async function createBinder(
     return binder.id;
   }
 
-  const cardsRaw = await prisma.card.findMany({ where: { set: input.set }, orderBy: { numero: "asc" } });
-  const cartes: Carte[] = cardsRaw.map(carteDepuisCard);
+  const cardsRaw = await prisma.card.findMany({ where: { set: input.set } });
+  const cartes: Carte[] = trierParNumero(cardsRaw).map(carteDepuisCard);
   const variantes = input.variantes === "normale_reverse" ? "normale_reverse" : "normale";
   const cases = ranger([], format, cartes, variantes === "normale_reverse");
   const binder = await prisma.binder.create({

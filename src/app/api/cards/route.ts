@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { trierParNumero } from "@/lib/grille";
 import type { Carte } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,6 @@ export async function GET(request: Request) {
     );
   }
 
-  const cards = await prisma.card.findMany({ where: { set }, orderBy: { numero: "asc" } });
+  const cards = trierParNumero(await prisma.card.findMany({ where: { set } }));
   return NextResponse.json(cards.map(versCarte) satisfies Carte[]);
 }
