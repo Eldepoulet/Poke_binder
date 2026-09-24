@@ -113,7 +113,6 @@ export async function importPokecardexCsv(texte: string, userId: string): Promis
 
   const sets = await prisma.set.findMany({ select: { code: true, name: true } });
   const codeParNomSet = new Map(sets.map((s) => [normaliserNomSet(s.name), s.code]));
-  const codesConnus = new Set(sets.map((s) => s.code));
 
   const setsNotFound = new Set<string>();
   let skippedSpecial = 0;
@@ -138,14 +137,10 @@ export async function importPokecardexCsv(texte: string, userId: string): Promis
     }
 
     const numero = normaliserNumero(numeroBrut);
-    // Les cartes "Galerie Galaroise"/"Galerie de Dresseurs" (numéro GGxx/TGxx)
-    // vivent sous un code Set distinct du set parent, mais Pokecardex garde
-    // le nom du set parent dans la colonne Serie — seul le préfixe du numéro
-    // permet de les distinguer.
-    const prefixe = numero.match(/^(GG|TG)/i)?.[1]?.toLowerCase();
-    const codeSuffixe = prefixe ? `${codeParent}${prefixe}` : null;
-    const code = codeSuffixe && codesConnus.has(codeSuffixe) ? codeSuffixe : codeParent;
-    const cardId = `${code}-${numero}`;
+    // Les cartes "Galerie Galaroise"/"Galerie de Dresseurs" (GGxx/TGxx) sont
+    // rangées dans leur set parent (cf. prisma/scripts/fusionner-galeries.ts),
+    // comme dans la colonne Serie de Pokecardex : "swsh12-TG01".
+    const cardId = `${codeParent}-${numero}`;
     const quantite = Math.max(1, parseInt(quantiteBrut, 10) || 1);
     const dateAjout = dateBrut?.trim() ? new Date(dateBrut.trim().replace(" ", "T")) : null;
     const langueVal = langue?.trim() ?? "";
@@ -200,8 +195,24 @@ export async function importPokecardexCsv(texte: string, userId: string): Promis
   }
 
   const idsFinal = [...new Set([...agg.values()].map((a) => a.cardId))];
-  const cartesFinal = await prisma.card.findMany({ where: { id: { in: idsFinal } }, select: { id: true } });
+  const cartesFinal = await prisma.card.findMany({
+    where: { id: { in: idsFinal } },
+    select: { id: true, varNormal: true, varHolo: true },
+  });
   const idsOk = new Set(cartesFinal.map((c) => c.id));
+  const varsParId = new Map(cartesFinal.map((c) => [c.id, c]));
+
+  // La rareté Pokecardex ne dit "holo" que pour les vieilles raretés : une
+  // "Double Rare" (ex), "Illustration Rare", "HIGH-TECH rare"... en
+  // "Standard" tomberait en normale alors que le catalogue ne la connaît
+  // qu'en holo (et inversement). On range la copie dans la variante que la
+  // carte possède réellement.
+  for (const a of agg.values()) {
+    const v = varsParId.get(a.cardId);
+    if (!v) continue;
+    if (a.variante === "n" && !v.varNormal && v.varHolo) a.variante = "h";
+    else if (a.variante === "h" && !v.varHolo && v.varNormal) a.variante = "n";
+  }
 
   const cardsNotFound: ImportResume["cardsNotFound"] = [];
   type Row = {

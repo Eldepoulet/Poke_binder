@@ -1287,31 +1287,13 @@
     "cardCount": 78
   },
   {
-    "code": "swsh10tg",
-    "name": "Astres Radieux Galerie de Dresseurs",
-    "serieCode": "swsh",
-    "serieName": "Épée et Bouclier",
-    "logo": null,
-    "symbol": null,
-    "cardCount": 30
-  },
-  {
     "code": "swsh10",
     "name": "Astres Radieux",
     "serieCode": "swsh",
     "serieName": "Épée et Bouclier",
     "logo": "https://assets.tcgdex.net/fr/swsh/swsh10/logo",
     "symbol": "https://assets.tcgdex.net/univ/swsh/swsh10/symbol",
-    "cardCount": 189
-  },
-  {
-    "code": "swsh11tg",
-    "name": "Origine Perdue Galerie de Dresseurs",
-    "serieCode": "swsh",
-    "serieName": "Épée et Bouclier",
-    "logo": null,
-    "symbol": null,
-    "cardCount": 30
+    "cardCount": 246
   },
   {
     "code": "swsh11",
@@ -1320,16 +1302,7 @@
     "serieName": "Épée et Bouclier",
     "logo": "https://assets.tcgdex.net/fr/swsh/swsh11/logo",
     "symbol": "https://assets.tcgdex.net/univ/swsh/swsh11/symbol",
-    "cardCount": 196
-  },
-  {
-    "code": "swsh12.5gg",
-    "name": "Zénith Suprême Galerie Galaroise",
-    "serieCode": "swsh",
-    "serieName": "Épée et Bouclier",
-    "logo": null,
-    "symbol": null,
-    "cardCount": 70
+    "cardCount": 247
   },
   {
     "code": "swsh12.5",
@@ -1338,16 +1311,7 @@
     "serieName": "Épée et Bouclier",
     "logo": "https://assets.tcgdex.net/fr/swsh/swsh12.5/logo",
     "symbol": "https://assets.tcgdex.net/univ/swsh/swsh12.5/symbol",
-    "cardCount": 159
-  },
-  {
-    "code": "swsh12tg",
-    "name": "Tempête Argentée Galerie de Dresseurs",
-    "serieCode": "swsh",
-    "serieName": "Épée et Bouclier",
-    "logo": null,
-    "symbol": null,
-    "cardCount": 30
+    "cardCount": 230
   },
   {
     "code": "swsh12",
@@ -1356,7 +1320,7 @@
     "serieName": "Épée et Bouclier",
     "logo": "https://assets.tcgdex.net/fr/swsh/swsh12/logo",
     "symbol": "https://assets.tcgdex.net/univ/swsh/swsh12/symbol",
-    "cardCount": 195
+    "cardCount": 245
   },
   {
     "code": "swsh1",
@@ -1458,22 +1422,13 @@
     "cardCount": 264
   },
   {
-    "code": "swsh9tg",
-    "name": "Stars Étincelantes Galerie de Dresseurs",
-    "serieCode": "swsh",
-    "serieName": "Épée et Bouclier",
-    "logo": null,
-    "symbol": null,
-    "cardCount": 30
-  },
-  {
     "code": "swsh9",
     "name": "Stars Étincelantes",
     "serieCode": "swsh",
     "serieName": "Épée et Bouclier",
     "logo": "https://assets.tcgdex.net/fr/swsh/swsh9/logo",
     "symbol": "https://assets.tcgdex.net/univ/swsh/swsh9/symbol",
-    "cardCount": 172
+    "cardCount": 216
   },
   {
     "code": "swshp",

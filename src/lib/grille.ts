@@ -131,7 +131,9 @@ export function ranger(cases: Case[], format: Format, cartes: Carte[], avecVaria
     .map((e, i) => (e && e.t === "i" ? { i, e } : null))
     .filter((v): v is { i: number; e: CaseVisuel } => v !== null);
 
-  const ordre = [...cartes].sort((a, b) => (Number(a.numero) || 0) - (Number(b.numero) || 0));
+  // Tri "naturel" : 9 avant 10, et les numéros préfixés (TG01, GG01 des
+  // galeries fusionnées dans leur set parent) après les numéros purs.
+  const ordre = [...cartes].sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
   // Alterné carte par carte : normale/reverse/pokéball/masterball de la
   // carte n avant la normale de la carte n+1 (garde l'ordre des numéros).
   const emplacements: { id: string; variante?: VarianteCarte }[] = avecVariantes
