@@ -260,6 +260,9 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
   border:1px solid var(--edge);border-radius:var(--radius);background:rgba(12,18,26,.55);text-align:center;max-width:320px}
 .connexion-carte h1{margin:0;font-size:1.2rem;font-weight:600}
 .connexion-carte p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+.connexion-liens{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;font-size:.78rem}
+.connexion-liens a{color:var(--muted)}
+.connexion-liens a:hover{color:var(--ink)}
 .bouton-google{padding:10px 18px;border-radius:7px;border:1px solid var(--edge);background:rgba(255,255,255,.04);font-size:.9rem;font-weight:500}
 .bouton-google:hover{background:rgba(255,255,255,.09)}
 .deconnexion{position:fixed;top:10px;right:10px;z-index:50;display:flex;align-items:center;gap:8px}

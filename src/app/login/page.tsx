@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signIn } from "@/auth";
 
 export default function LoginPage() {
@@ -16,6 +17,11 @@ export default function LoginPage() {
             Se connecter avec Google
           </button>
         </form>
+        <nav className="connexion-liens">
+          <Link href="/about">À propos</Link>
+          <Link href="/privacy">Confidentialité</Link>
+          <Link href="/terms">Conditions</Link>
+        </nav>
       </div>
     </main>
   );

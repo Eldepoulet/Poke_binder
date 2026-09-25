@@ -11,8 +11,8 @@ const MAJ = "23 septembre 2026";
 export default function PrivacyPage() {
   return (
     <main className="accueil legal">
-      <Link className="accueil-retour" href="/">
-        ← Accueil
+      <Link className="accueil-retour" href="/about">
+        ← Présentation
       </Link>
 
       <h1>Politique de confidentialité</h1>
@@ -22,8 +22,8 @@ export default function PrivacyPage() {
         <h2>Responsable du traitement</h2>
         <p>
           Ce site est un projet personnel, sans finalité commerciale, édité par{" "}
-          <strong>[À COMPLÉTER : ton nom ou pseudonyme]</strong>. Pour toute question ou demande
-          concernant tes données, écris à <strong>[À COMPLÉTER : adresse e-mail de contact]</strong>.
+          <strong>Elvin</strong>. Pour toute question ou demande
+          concernant tes données, écris à <strong>elvin.cha08@gmail.com</strong>.
         </p>
       </section>
 
