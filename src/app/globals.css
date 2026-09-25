@@ -1,6 +1,6 @@
 :root{
   --desk:#151E29; --binder:#223247; --page:#2B3E55; --page-2:#25364B;
-  --pocket:#1B2836; --edge:rgba(255,255,255,.09);
+  --pocket:#1B2836; --edge:rgba(255,255,255,.09); --barre-compte:34px;
   --ink:#E9EFF7; --muted:#8FA3BA;
   --spark:#FFC94A; --reverse:#6FD8EC; --holo:#C89BF5;
   --pokeball:#E4483C; --masterball:#9B59F6;
@@ -76,7 +76,11 @@ button{cursor:pointer;background:none;border:none}
   background:linear-gradient(160deg,var(--binder),#1B2939);border-radius:14px;padding:12px;
   box-shadow:0 24px 60px rgba(0,0,0,.55),0 0 0 1px var(--edge) inset}
 .feuille{background:linear-gradient(170deg,var(--page),var(--page-2));border-radius:8px;padding:clamp(10px,1.4vw,18px);min-width:0}
-.feuille .entete{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:9px}
+.feuille .entete{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.72rem;color:var(--muted);margin-bottom:9px}
+.feuille .entete-actions{display:flex;align-items:center;gap:6px}
+.feuille .entete-actions button{padding:2px 7px;border:1px solid var(--edge);border-radius:5px;background:rgba(255,255,255,.04);font-size:.68rem;color:var(--muted)}
+.feuille .entete-actions button:hover{color:var(--ink);border-color:var(--spark)}
+.feuille .entete-actions .entete-supprimer:hover{color:#F2A6A6;border-color:#C25B5B}
 .grille{display:grid;gap:clamp(6px,.9vw,11px);aspect-ratio:63/88;grid-auto-rows:minmax(0,1fr)}
 .anneaux{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;width:26px;padding:16px 0}
 .anneaux i{width:13px;height:13px;border-radius:50%;background:linear-gradient(145deg,#C3CEDC,#6A7B8E);box-shadow:0 1px 2px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3)}
@@ -103,10 +107,15 @@ button{cursor:pointer;background:none;border:none}
 .pochette.visuel{background-repeat:no-repeat}
 .pochette.non-possedee img{opacity:.45}
 
-.pagination{display:flex;align-items:center;gap:14px;margin-top:16px;font-size:.85rem;color:var(--muted);flex-wrap:wrap;justify-content:center}
+.pagination{display:flex;align-items:center;gap:14px;margin-bottom:16px;font-size:.85rem;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .pagination button{padding:8px 15px;border:1px solid var(--edge);border-radius:7px;background:rgba(255,255,255,.04)}
 .pagination button:disabled{opacity:.3;cursor:default}
 .pagination b{color:var(--ink);font-weight:600}
+.pagination-option{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.pagination-option input{accent-color:var(--spark);cursor:pointer}
+.feuille.couverture{background:linear-gradient(170deg,var(--binder),#1C2A3C);box-shadow:inset 0 0 0 1px var(--edge)}
+.pagination-choix{display:flex;align-items:center;gap:8px}
+.pagination-choix select{padding:7px 10px;border:1px solid var(--edge);border-radius:7px;background:var(--pocket);color:var(--ink);font:inherit;cursor:pointer}
 
 dialog{border:none;padding:0;border-radius:14px;background:#1D2A3A;color:var(--ink);
   max-width:min(660px,94vw);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px var(--edge)}
@@ -240,7 +249,7 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
   .biblio{grid-template-columns:repeat(3,1fr)}
   .classeur{grid-template-columns:1fr;padding:9px}
   .anneaux{flex-direction:row;width:auto;height:22px;padding:0}
-  .feuille.droite{display:none}
+  .feuille.droite,.feuille.couverture{display:none}
   .fiche{grid-template-columns:1fr}
   .fiche .apercu{max-width:190px}
 }
@@ -265,9 +274,11 @@ dialog::backdrop{background:rgba(6,10,15,.78)}
 .connexion-liens a:hover{color:var(--ink)}
 .bouton-google{padding:10px 18px;border-radius:7px;border:1px solid var(--edge);background:rgba(255,255,255,.04);font-size:.9rem;font-weight:500}
 .bouton-google:hover{background:rgba(255,255,255,.09)}
-.deconnexion{position:fixed;top:10px;right:10px;z-index:50;display:flex;align-items:center;gap:8px}
-.deconnexion-email{font-size:.74rem;color:var(--muted)}
-.deconnexion button{padding:6px 12px;border-radius:7px;border:1px solid var(--edge);background:rgba(12,18,26,.55);font-size:.78rem;color:var(--muted)}
+.deconnexion{height:var(--barre-compte);display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 var(--pad);
+  border-bottom:1px solid var(--edge);background:rgba(8,12,18,.7)}
+.deconnexion ~ .app{height:calc(100vh - var(--barre-compte));height:calc(100dvh - var(--barre-compte))}
+.deconnexion-email{font-size:.74rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.deconnexion button{padding:3px 10px;white-space:nowrap;border-radius:7px;border:1px solid var(--edge);background:rgba(12,18,26,.55);font-size:.78rem;color:var(--muted)}
 .deconnexion button:hover{background:rgba(255,255,255,.09);color:var(--ink)}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

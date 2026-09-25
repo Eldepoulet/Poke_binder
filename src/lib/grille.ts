@@ -175,7 +175,25 @@ export function changerFormat(cases: Case[], nouveauFormat: Format): Case[] {
 }
 
 export function ajouterPages(cases: Case[], format: Format): Case[] {
-  return [...cases, ...new Array(parPage(format) * 2).fill(null)];
+  return [...cases, ...new Array(parPage(format)).fill(null)];
+}
+
+// Insère une page vierge à la position `page` (0 = avant la première) : les
+// pages suivantes sont décalées d'un cran. Les visuels restent ancrés dans
+// leur page, qui se déplace d'un bloc.
+export function insererPage(cases: Case[], format: Format, page: number): Case[] {
+  const next = dimensionner(cases, format);
+  const debut = Math.min(page * parPage(format), next.length);
+  return [...next.slice(0, debut), ...new Array(parPage(format)).fill(null), ...next.slice(debut)];
+}
+
+// Retire la page `page` et son contenu : les pages suivantes remontent d'un
+// cran. Le classeur garde au moins deux pages (cf. nbPages).
+export function supprimerPage(cases: Case[], format: Format, page: number): Case[] {
+  const next = dimensionner(cases, format);
+  const debut = page * parPage(format);
+  if (debut >= next.length) return cases;
+  return dimensionner([...next.slice(0, debut), ...next.slice(debut + parPage(format))], format);
 }
 
 export function mettreAJourCase(cases: Case[], indice: number, patch: Partial<CaseVisuel>): Case[] {

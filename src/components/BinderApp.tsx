@@ -4,9 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Carte, Case, CaseVisuel, ExportPayload, Format, PossedeMap, TypeClasseur, Visuel } from "@/lib/types";
 import {
   ajouterPages,
+  insererPage,
+  supprimerPage,
   changerFormat,
   dimensionner,
   libererZone,
+  nbPages,
   placer,
   ranger,
   type Charge,
@@ -77,6 +80,22 @@ export default function BinderApp({
   }, []);
 
   const [spread, setSpread] = useState(0);
+  // Préférence d'affichage propre à ce navigateur : pas besoin de la stocker
+  // en base, elle ne change rien au contenu du classeur.
+  const clePremiereDouble = `classeur:${binder.id}:premiereDouble`;
+  const [premiereDouble, setPremiereDouble] = useState(false);
+  useEffect(() => {
+    try {
+      setPremiereDouble(localStorage.getItem(clePremiereDouble) === "1");
+    } catch {}
+  }, [clePremiereDouble]);
+  function changerPremiereDouble(v: boolean) {
+    setPremiereDouble(v);
+    setSpread(0);
+    try {
+      localStorage.setItem(clePremiereDouble, v ? "1" : "0");
+    } catch {}
+  }
   const [onglet, setOnglet] = useState<"cartes" | "visuels">("cartes");
   const [selection, setSelection] = useState<Selection>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -131,12 +150,16 @@ export default function BinderApp({
     return () => clearTimeout(t);
   }, [binder.id, format, cases]);
 
+  const maxSpread = Math.ceil((nbPages(cases, format) + (premiereDouble ? 0 : 1)) / 2) - 1;
+  const maxSpreadRef = useRef(maxSpread);
+  maxSpreadRef.current = maxSpread;
+
   useEffect(() => {
     function surClavier(e: KeyboardEvent) {
       const cible = e.target as HTMLElement;
       if (cible.matches("input,select,textarea")) return;
       if (e.key === "ArrowLeft") setSpread((s) => Math.max(0, s - 1));
-      if (e.key === "ArrowRight") setSpread((s) => s + 1);
+      if (e.key === "ArrowRight") setSpread((s) => Math.min(maxSpreadRef.current, s + 1));
       if (e.key === "Escape") setSelection(null);
     }
     document.addEventListener("keydown", surClavier);
@@ -178,6 +201,14 @@ export default function BinderApp({
 
   function ajouterPagesHandler() {
     setCases((prev) => ajouterPages(dimensionner(prev, format), format));
+  }
+
+  function insererPageHandler(position: number) {
+    setCases((prev) => insererPage(prev, format, position));
+  }
+
+  function supprimerPageHandler(page: number) {
+    setCases((prev) => supprimerPage(prev, format, page));
   }
 
   function alternerVariante(carteId: string, cle: "n" | "r" | "h" | "p" | "m", val: boolean) {
@@ -457,7 +488,11 @@ export default function BinderApp({
           spread={spread}
           onSpreadChange={setSpread}
           dragOverIndice={dragOverIndice}
+          premiereDouble={premiereDouble}
+          onPremiereDoubleChange={changerPremiereDouble}
           onAjouterPages={ajouterPagesHandler}
+          onInsererPage={insererPageHandler}
+          onSupprimerPage={supprimerPageHandler}
         />
       </div>
 

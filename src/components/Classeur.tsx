@@ -13,6 +13,8 @@ function Page({
   possede,
   dragOverIndice,
   libelle,
+  onInserer,
+  onSupprimer,
 }: {
   page: number;
   format: Format;
@@ -22,6 +24,10 @@ function Page({
   possede: PossedeMap;
   dragOverIndice: number | null;
   libelle: string;
+  // Absent sur la page de droite : les boutons d'insertion ne s'affichent
+  // qu'une fois par double page.
+  onInserer?: (position: number) => void;
+  onSupprimer: (page: number) => void;
 }) {
   const base = page * parPage(format);
   const { masquees, tuiles } = analyse(cases, format, page);
@@ -61,13 +67,52 @@ function Page({
     <section className="feuille">
       <div className="entete">
         <span>{libelle}</span>
-        <span>{`${pleines}/${parPage(format)}`}</span>
+        <span className="entete-actions">
+          {onInserer && (
+            <>
+              <button onClick={() => onInserer(page)} title={`Insérer une page vierge avant la ${libelle.toLowerCase()}`}>
+                + avant
+              </button>
+              <button onClick={() => onInserer(page + 1)} title={`Insérer une page vierge après la ${libelle.toLowerCase()}`}>
+                + après
+              </button>
+            </>
+          )}
+          <button
+            className="entete-supprimer"
+            onClick={() => {
+              if (pleines && !confirm(`Supprimer la ${libelle.toLowerCase()} et les ${pleines} élément(s) qu'elle contient ?`)) return;
+              onSupprimer(page);
+            }}
+            title={`Supprimer la ${libelle.toLowerCase()}`}
+          >
+            Supprimer
+          </button>
+          <span>{`${pleines}/${parPage(format)}`}</span>
+        </span>
       </div>
       <div className="grille" style={{ gridTemplateColumns: `repeat(${format},1fr)` }}>
         {cellules}
       </div>
     </section>
   );
+}
+
+// Double page n° `s` → indices des pages gauche/droite (null si hors
+// classeur). Comme un vrai classeur, la page 1 est par défaut seule à droite,
+// face au revers de la couverture ; `premiereDouble` la place à gauche.
+function pagesDuSpread(s: number, total: number, premiereDouble: boolean) {
+  const gauche = s * 2 - (premiereDouble ? 0 : 1);
+  const droite = gauche + 1;
+  return {
+    gauche: gauche >= 0 && gauche < total ? gauche : null,
+    droite: droite < total ? droite : null,
+  };
+}
+
+function libelleSpread(g: number | null, d: number | null) {
+  if (g !== null && d !== null) return `Pages ${g + 1}–${d + 1}`;
+  return `Page ${(g ?? d ?? 0) + 1}`;
 }
 
 export default function Classeur({
@@ -79,7 +124,11 @@ export default function Classeur({
   spread,
   onSpreadChange,
   dragOverIndice,
+  premiereDouble,
+  onPremiereDoubleChange,
   onAjouterPages,
+  onInsererPage,
+  onSupprimerPage,
 }: {
   format: Format;
   cases: Case[];
@@ -89,60 +138,77 @@ export default function Classeur({
   spread: number;
   onSpreadChange: (s: number) => void;
   dragOverIndice: number | null;
+  premiereDouble: boolean;
+  onPremiereDoubleChange: (v: boolean) => void;
   onAjouterPages: () => void;
+  onInsererPage: (position: number) => void;
+  onSupprimerPage: (page: number) => void;
 }) {
   const total = nbPages(cases, format);
-  const maxSpread = Math.ceil(total / 2) - 1;
+  const maxSpread = Math.ceil((total + (premiereDouble ? 0 : 1)) / 2) - 1;
   const spreadClamp = Math.min(Math.max(0, spread), maxSpread);
-  const g = spreadClamp * 2;
-  const d = g + 1;
-  const droiteVisible = d < total;
+  const { gauche: g, droite: d } = pagesDuSpread(spreadClamp, total, premiereDouble);
+
+  const communs = { format, cases, cardsById, visuelsById, possede, dragOverIndice, onSupprimer: onSupprimerPage };
 
   return (
     <main className="scene">
+      <nav className="pagination">
+        <button disabled={spreadClamp === 0} onClick={() => onSpreadChange(0)} title="Aller au début du classeur">
+          « Début
+        </button>
+        <button disabled={spreadClamp === 0} onClick={() => onSpreadChange(spreadClamp - 1)}>
+          Page précédente
+        </button>
+        <label className="pagination-choix">
+          <select
+            value={spreadClamp}
+            onChange={(e) => onSpreadChange(Number(e.target.value))}
+            aria-label="Aller aux pages"
+          >
+            {Array.from({ length: maxSpread + 1 }, (_, s) => {
+              const p = pagesDuSpread(s, total, premiereDouble);
+              return (
+                <option key={s} value={s}>
+                  {libelleSpread(p.gauche, p.droite)}
+                </option>
+              );
+            })}
+          </select>
+          <span>
+            sur <b>{total}</b>
+          </span>
+        </label>
+        <button disabled={spreadClamp >= maxSpread} onClick={() => onSpreadChange(spreadClamp + 1)}>
+          Page suivante
+        </button>
+        <button disabled={spreadClamp >= maxSpread} onClick={() => onSpreadChange(maxSpread)} title="Aller à la fin du classeur">
+          Fin »
+        </button>
+        <button onClick={onAjouterPages}>
+          Ajouter une page à la fin
+        </button>
+        <label className="pagination-option" title="Par défaut, la page 1 est seule à droite, comme dans un vrai classeur">
+          <input type="checkbox" checked={premiereDouble} onChange={(e) => onPremiereDoubleChange(e.target.checked)} />
+          1re page en double
+        </label>
+      </nav>
       <div className="classeur">
-        <Page
-          page={g}
-          format={format}
-          cases={cases}
-          cardsById={cardsById}
-          visuelsById={visuelsById}
-          possede={possede}
-          dragOverIndice={dragOverIndice}
-          libelle={`Page ${g + 1}`}
-        />
+        {g !== null ? (
+          <Page {...communs} page={g} libelle={`Page ${g + 1}`} onInserer={onInsererPage} />
+        ) : (
+          <section className="feuille couverture" aria-label="Revers de la couverture" />
+        )}
         <div className="anneaux" aria-hidden="true">
           <i /><i /><i /><i /><i />
         </div>
-        {droiteVisible ? (
-          <Page
-            page={d}
-            format={format}
-            cases={cases}
-            cardsById={cardsById}
-            visuelsById={visuelsById}
-            possede={possede}
-            dragOverIndice={dragOverIndice}
-            libelle={`Page ${d + 1}`}
-          />
+        {d !== null ? (
+          // Les boutons d'insertion vont sur la première vraie page de la double page.
+          <Page {...communs} page={d} libelle={`Page ${d + 1}`} onInserer={g === null ? onInsererPage : undefined} />
         ) : (
           <section className="feuille droite" style={{ visibility: "hidden" }} />
         )}
       </div>
-      <nav className="pagination">
-        <button disabled={spreadClamp === 0} onClick={() => onSpreadChange(spreadClamp - 1)}>
-          Page précédente
-        </button>
-        <span>
-          Pages <b>{droiteVisible ? `${g + 1}–${d + 1}` : `${g + 1}`}</b> sur <b>{total}</b>
-        </span>
-        <button disabled={spreadClamp >= maxSpread} onClick={() => onSpreadChange(spreadClamp + 1)}>
-          Page suivante
-        </button>
-        <button onClick={onAjouterPages}>
-          Ajouter des pages
-        </button>
-      </nav>
     </main>
   );
 }
