@@ -78,6 +78,14 @@ export default function Pochette({
 
   if (entry && entry.t === "c" && carte) {
     if (manquant) classes.push("manquant");
+    // Même rendu que la page Collection : une carte non possédée est assombrie.
+    // Case liée à une variante précise → seule cette variante compte.
+    const possedee = possede
+      ? entry.variante
+        ? possede[entry.variante]
+        : possede.n || possede.r || possede.h || possede.p || possede.m
+      : false;
+    if (!possedee) classes.push("non-possedee");
     const titre = `${carte.nom} — n° ${carte.numero}${carte.rarete ? " · " + carte.rarete : ""}${
       entry.variante ? " · " + LIBELLE_COURT[entry.variante] : ""
     }`;

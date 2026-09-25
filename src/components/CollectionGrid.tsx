@@ -213,7 +213,7 @@ export default function CollectionGrid({
             return (
               <div key={c.id} className={`collection-carte${possedeUne(qte) ? "" : " manquante"}`}>
                 <div className="collection-image">
-                  <CardImage carte={c} hd />
+                  <CardImage carte={c} />
                 </div>
                 <div className="collection-nom">
                   {c.nom} <span>n° {c.numero}</span>
@@ -248,7 +248,7 @@ export default function CollectionGrid({
             return (
               <div key={`${c.id}-${varianteKey}`} className={`collection-carte${on ? "" : " manquante"}`}>
                 <div className="collection-image">
-                  <CardImage carte={c} hd />
+                  <CardImage carte={c} />
                 </div>
                 <div className="collection-nom">
                   {c.nom} <span>n° {c.numero} · {LIBELLE_COURT[varianteKey]}</span>

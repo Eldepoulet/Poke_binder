@@ -101,6 +101,7 @@ button{cursor:pointer;background:none;border:none}
 .pochette .variantes i.on-m{background:var(--masterball)}
 .pochette.manquant .place{color:#5E4B4B;font-size:.68rem;text-align:center;padding:6px;line-height:1.3;white-space:pre-line}
 .pochette.visuel{background-repeat:no-repeat}
+.pochette.non-possedee img{opacity:.45}
 
 .pagination{display:flex;align-items:center;gap:14px;margin-top:16px;font-size:.85rem;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .pagination button{padding:8px 15px;border:1px solid var(--edge);border-radius:7px;background:rgba(255,255,255,.04)}

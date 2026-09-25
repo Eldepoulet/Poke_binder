@@ -3,10 +3,19 @@
 import { useEffect, useState } from "react";
 import type { Carte } from "@/lib/types";
 
+// tcgdex sert la même image en basse définition sous `low.webp` : on la déduit
+// quand seule la version `high` est connue en base.
+function basseDefinition(url: string | null): string | null {
+  if (!url || !url.includes("assets.tcgdex.net")) return null;
+  const low = url.replace(/\/high\.(webp|png|jpg)$/, "/low.$1");
+  return low !== url ? low : null;
+}
+
 function sourcesCarte(carte: Carte, hd: boolean): string[] {
+  const low = carte.imageLow ?? basseDefinition(carte.imageUrl);
   const ordre = hd
-    ? [carte.imageUrl, carte.imageLocal, carte.imageLow]
-    : [carte.imageLocal, carte.imageLow, carte.imageUrl];
+    ? [carte.imageUrl, carte.imageLocal, low]
+    : [carte.imageLocal, low, carte.imageUrl];
   return ordre.filter((s): s is string => !!s);
 }
 
